@@ -1,0 +1,5 @@
+{
+  "name": "Elemental Vision",
+  "description": "An immersive, offline-first periodic table explorer featuring dual-mode 3D atom visualization (Bohr & Quantum Cloud) and comprehensive chemical data.",
+  "requestFramePermissions": []
+}
