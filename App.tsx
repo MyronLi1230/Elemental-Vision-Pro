@@ -7,6 +7,8 @@ import { ELEMENTS } from './data/elementData';
 
 const App: React.FC = () => {
   const [selectedElement, setSelectedElement] = useState<ElementData | null>(null);
+  const [originRect, setOriginRect] = useState<DOMRect | null>(null);
+  const [isClosing, setIsClosing] = useState(false);
   const [lang, setLang] = useState<Language>('zh');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -20,9 +22,20 @@ const App: React.FC = () => {
       )
     : [];
 
-  const handleSearchSelect = (e: ElementData) => {
+  const handleOpen = (e: ElementData, rect?: DOMRect) => {
+    setIsClosing(false);
     setSelectedElement(e);
+    setOriginRect(rect || null);
     setSearchQuery('');
+  };
+
+  const handleClose = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      setSelectedElement(null);
+      setOriginRect(null);
+      setIsClosing(false);
+    }, 300); // Matches animation duration
   };
 
   return (
@@ -59,7 +72,7 @@ const App: React.FC = () => {
                 filteredElements.map(e => (
                   <button 
                     key={e.number}
-                    onClick={() => handleSearchSelect(e)}
+                    onClick={() => handleOpen(e)}
                     className="w-full text-left px-4 py-2 hover:bg-white/5 flex items-center justify-between border-b border-white/5 last:border-0"
                   >
                     <div>
@@ -100,7 +113,7 @@ const App: React.FC = () => {
         </div>
 
         <div className="flex-1 min-h-0 relative">
-          <PeriodicTable onSelect={setSelectedElement} />
+          <PeriodicTable onSelect={handleOpen} />
         </div>
       </main>
 
@@ -108,8 +121,10 @@ const App: React.FC = () => {
       {selectedElement && (
         <ElementDetail 
           element={selectedElement} 
-          onClose={() => setSelectedElement(null)} 
+          onClose={handleClose} 
           lang={lang} 
+          isClosing={isClosing}
+          originRect={originRect}
         />
       )}
     </div>

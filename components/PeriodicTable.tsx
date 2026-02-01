@@ -5,12 +5,12 @@ import { getCategoryColor } from '../utils/colors';
 import { ZoomIn, ZoomOut, RotateCcw, Move } from 'lucide-react';
 
 interface PeriodicTableProps {
-  onSelect: (element: ElementData) => void;
+  onSelect: (element: ElementData, rect?: DOMRect) => void;
 }
 
 interface TileProps {
   e: ElementData;
-  onSelect: (element: ElementData) => void;
+  onSelect: (element: ElementData, rect?: DOMRect) => void;
   isFBlock?: boolean;
 }
 
@@ -20,9 +20,6 @@ const Tile: React.FC<TileProps> = ({ e, onSelect, isFBlock }) => {
   let style: React.CSSProperties = {};
 
   // Grid Logic:
-  // Row 1 is now the Group Numbers Header.
-  // Period 1 starts at Row 2.
-  // Period 2 -> Row 3, etc.
   if (!isFBlock) {
     if (e.number === 1) style = { gridRow: 2, gridColumn: 1 };
     else if (e.number === 2) style = { gridRow: 2, gridColumn: 18 };
@@ -43,7 +40,8 @@ const Tile: React.FC<TileProps> = ({ e, onSelect, isFBlock }) => {
       onClick={(evt) => {
         // Prevent click if we were dragging
         if (evt.defaultPrevented) return;
-        onSelect(e);
+        const rect = evt.currentTarget.getBoundingClientRect();
+        onSelect(e, rect);
       }}
       style={style}
       className={`
@@ -74,7 +72,7 @@ const PeriodicTable: React.FC<PeriodicTableProps> = ({ onSelect }) => {
   const [transform, setTransform] = useState({ x: 0, y: 0, scale: 1 });
   const [isDragging, setIsDragging] = useState(false);
   
-  // Refs for gesture calculations to avoid stale closures in event listeners
+  // Refs for gesture calculations
   const gesture = useRef({
     startX: 0,
     startY: 0,
@@ -86,22 +84,19 @@ const PeriodicTable: React.FC<PeriodicTableProps> = ({ onSelect }) => {
     hasMoved: false
   });
 
-  // Center the table on mount
   useEffect(() => {
     if (containerRef.current) {
       const containerWidth = containerRef.current.clientWidth;
       const contentWidth = 900; // Min width of table
       
-      // If mobile, start zoomed out a bit
       const initialScale = containerWidth < 768 ? (containerWidth / contentWidth) * 0.9 : 0.9;
       const centeredX = (containerWidth - contentWidth * initialScale) / 2;
-      const centeredY = 40; // Top padding
+      const centeredY = 40; 
 
       setTransform({ x: centeredX, y: centeredY, scale: initialScale });
     }
   }, []);
 
-  // Mouse Event Handlers
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true);
     gesture.current.startX = e.clientX;
@@ -130,7 +125,6 @@ const PeriodicTable: React.FC<PeriodicTableProps> = ({ onSelect }) => {
 
   const handleMouseUp = (e: React.MouseEvent) => {
     setIsDragging(false);
-    // If it was a drag, prevent the click from firing on the button
     if (gesture.current.hasMoved) {
       e.preventDefault();
     }
@@ -140,7 +134,6 @@ const PeriodicTable: React.FC<PeriodicTableProps> = ({ onSelect }) => {
     setIsDragging(false);
   };
 
-  // Wheel Zoom
   const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -149,11 +142,9 @@ const PeriodicTable: React.FC<PeriodicTableProps> = ({ onSelect }) => {
     const delta = -e.deltaY * zoomSensitivity;
     const newScale = Math.min(Math.max(transform.scale + delta, 0.2), 3);
     
-    // Zoom towards center of container for simplicity
     setTransform(prev => ({ ...prev, scale: newScale }));
   };
 
-  // Touch Handlers for Mobile (Pan & Pinch)
   const handleTouchStart = (e: React.TouchEvent) => {
     if (e.touches.length === 1) {
       setIsDragging(true);
@@ -205,7 +196,6 @@ const PeriodicTable: React.FC<PeriodicTableProps> = ({ onSelect }) => {
     gesture.current.isPinching = false;
   };
 
-  // Controls
   const zoomIn = () => setTransform(prev => ({ ...prev, scale: Math.min(prev.scale + 0.2, 3) }));
   const zoomOut = () => setTransform(prev => ({ ...prev, scale: Math.max(prev.scale - 0.2, 0.2) }));
   const reset = () => {
@@ -240,7 +230,7 @@ const PeriodicTable: React.FC<PeriodicTableProps> = ({ onSelect }) => {
         </div>
       </div>
 
-      {/* Viewport Container - Increased Height */}
+      {/* Viewport Container */}
       <div 
         ref={containerRef}
         className="relative w-full h-[70vh] md:h-[80vh] overflow-hidden bg-white/5 border border-white/5 rounded-xl cursor-grab active:cursor-grabbing touch-none shadow-inner"
@@ -273,7 +263,7 @@ const PeriodicTable: React.FC<PeriodicTableProps> = ({ onSelect }) => {
                 </div>
               ))}
 
-              {mainTableElements.map(e => <Tile key={e.number} e={e} onSelect={(el) => !gesture.current.hasMoved && onSelect(el)} />)}
+              {mainTableElements.map(e => <Tile key={e.number} e={e} onSelect={(el, rect) => !gesture.current.hasMoved && onSelect(el, rect)} />)}
               
               <div style={{ gridRow: 7, gridColumn: 3 }} className="border border-white/10 rounded-md flex items-center justify-center text-xs text-white/40 font-mono">57-71</div>
               <div style={{ gridRow: 8, gridColumn: 3 }} className="border border-white/10 rounded-md flex items-center justify-center text-xs text-white/40 font-mono">89-103</div>
@@ -283,11 +273,11 @@ const PeriodicTable: React.FC<PeriodicTableProps> = ({ onSelect }) => {
             <div className="min-w-[900px] mt-6 flex flex-col gap-2 w-full">
               <div className="grid gap-1 md:gap-2" style={{ gridTemplateColumns: 'repeat(18, minmax(0, 1fr))' }}>
                   <div className="col-span-2 flex items-center justify-end pr-4 text-xs text-white/30 font-mono tracking-wider">Lanthanides</div>
-                  {lanthanides.map(e => <Tile key={e.number} e={e} onSelect={(el) => !gesture.current.hasMoved && onSelect(el)} isFBlock />)}
+                  {lanthanides.map(e => <Tile key={e.number} e={e} onSelect={(el, rect) => !gesture.current.hasMoved && onSelect(el, rect)} isFBlock />)}
               </div>
               <div className="grid gap-1 md:gap-2" style={{ gridTemplateColumns: 'repeat(18, minmax(0, 1fr))' }}>
                   <div className="col-span-2 flex items-center justify-end pr-4 text-xs text-white/30 font-mono tracking-wider">Actinides</div>
-                  {actinides.map(e => <Tile key={e.number} e={e} onSelect={(el) => !gesture.current.hasMoved && onSelect(el)} isFBlock />)}
+                  {actinides.map(e => <Tile key={e.number} e={e} onSelect={(el, rect) => !gesture.current.hasMoved && onSelect(el, rect)} isFBlock />)}
               </div>
             </div>
           </div>

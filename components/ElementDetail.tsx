@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { X, Layers, Activity, BookOpen, AlertTriangle, Atom, Zap, Scale, Thermometer } from 'lucide-react';
 import { ElementData, Language, VisualMode } from '../types';
 import { getCategoryColor, getCategoryGlow } from '../utils/colors';
@@ -9,11 +9,39 @@ interface DetailProps {
   element: ElementData | null;
   onClose: () => void;
   lang: Language;
+  isClosing: boolean;
+  originRect: DOMRect | null;
 }
 
-const ElementDetail: React.FC<DetailProps> = ({ element, onClose, lang }) => {
+const ElementDetail: React.FC<DetailProps> = ({ element, onClose, lang, isClosing, originRect }) => {
   const [visualMode, setVisualMode] = useState<VisualMode>('bohr');
   
+  // Calculate transform-origin dynamically
+  // The modal content is centered in the viewport.
+  // We need to find the offset of the originRect center relative to the window center.
+  const animationStyle = useMemo(() => {
+    if (!originRect) return {};
+
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+
+    // Center of the clicked element
+    const originX = originRect.left + originRect.width / 2;
+    const originY = originRect.top + originRect.height / 2;
+
+    // Center of the screen (where the modal is centered)
+    const centerX = windowWidth / 2;
+    const centerY = windowHeight / 2;
+
+    // Calculate offset
+    const deltaX = originX - centerX;
+    const deltaY = originY - centerY;
+
+    return {
+      transformOrigin: `calc(50% + ${deltaX}px) calc(50% + ${deltaY}px)`
+    };
+  }, [originRect]);
+
   if (!element) return null;
 
   const color = getCategoryColor(element.category);
@@ -31,15 +59,24 @@ const ElementDetail: React.FC<DetailProps> = ({ element, onClose, lang }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
+    <div 
+      className={`fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4 bg-black/80 backdrop-blur-md ${isClosing ? 'anim-fade-out' : 'anim-fade-in'}`}
+      onClick={(e) => {
+        // Close if clicking outside
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
       <div 
-        className="w-full h-full md:max-w-6xl md:h-[90vh] bg-[#0f172a]/90 md:rounded-2xl border border-white/10 shadow-2xl overflow-hidden flex flex-col md:flex-row"
-        style={{ boxShadow: glow }}
+        className={`w-full h-full md:max-w-6xl md:h-[90vh] bg-[#0f172a]/90 md:rounded-2xl border border-white/10 shadow-2xl overflow-hidden flex flex-col md:flex-row ${isClosing ? 'anim-scale-out-safe' : 'anim-scale-in'}`}
+        style={{ 
+          boxShadow: glow,
+          ...animationStyle
+        }}
       >
         {/* Close Button Mobile */}
         <button 
           onClick={onClose} 
-          className="absolute top-4 right-4 z-50 md:hidden p-2 bg-black/50 rounded-full"
+          className="absolute top-4 right-4 z-50 md:hidden p-2 bg-black/50 rounded-full hover:bg-black/70 active:scale-95 transition-all"
         >
           <X className="text-white" />
         </button>
@@ -73,7 +110,7 @@ const ElementDetail: React.FC<DetailProps> = ({ element, onClose, lang }) => {
         <div className="w-full md:w-1/2 h-[60vh] md:h-full overflow-y-auto bg-black/20 p-6 relative">
           <button 
             onClick={onClose} 
-            className="absolute top-6 right-6 hidden md:block hover:bg-white/10 p-2 rounded-full transition-colors"
+            className="absolute top-6 right-6 hidden md:block hover:bg-white/10 p-2 rounded-full transition-all hover:rotate-90"
           >
             <X size={24} className="text-white/70" />
           </button>

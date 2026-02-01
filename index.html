@@ -27,20 +27,41 @@
         color: white;
         overflow: hidden; /* App-like feel */
       }
+
+      /* Modal Animations */
+      @keyframes fadeIn { from { opacity: 0; backdrop-filter: blur(0px); } to { opacity: 1; backdrop-filter: blur(12px); } }
+      @keyframes fadeOut { from { opacity: 1; backdrop-filter: blur(12px); } to { opacity: 0; backdrop-filter: blur(0px); } }
+      
+      /* Origin-based Zoom Effect */
+      @keyframes scaleIn { 
+        from { transform: scale(0.05); opacity: 0; } 
+        to { transform: scale(1); opacity: 1; } 
+      }
+      @keyframes scaleOut { 
+        from { transform: scale(1); opacity: 1; } 
+        to { transform: scale(0.05); opacity: 0; } 
+      }
+      
+      .anim-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+      .anim-fade-out { animation: fadeOut 0.3s ease-in forwards; }
+      
+      /* Uses dynamic transform-origin set in React */
+      .anim-scale-in { animation: scaleIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+      .anim-scale-out-safe { animation: scaleOut 0.3s cubic-bezier(0.32, 0, 0.67, 0) forwards; }
     </style>
   <script type="importmap">
 {
   "imports": {
-    "react": "https://esm.sh/react@^19.2.3",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "@react-three/fiber": "https://esm.sh/@react-three/fiber@^9.5.0",
-    "@react-three/drei": "https://esm.sh/@react-three/drei@^10.7.7",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "recharts": "https://esm.sh/recharts@^3.7.0",
+    "lucide-react": "https://esm.sh/lucide-react@^0.563.0",
+    "react/": "https://esm.sh/react@^19.2.4/",
+    "react": "https://esm.sh/react@^19.2.4",
     "three": "https://esm.sh/three@^0.182.0",
-    "recharts": "https://esm.sh/recharts@^3.6.0",
-    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
-    "vite": "https://esm.sh/vite@^7.3.0",
-    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
+    "@react-three/fiber": "https://esm.sh/@react-three/fiber@^9.5.0",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
+    "vite": "https://esm.sh/vite@^7.3.1",
+    "@react-three/drei": "https://esm.sh/@react-three/drei@^10.7.7"
   }
 }
 </script>
