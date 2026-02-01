@@ -19,19 +19,23 @@ const Tile: React.FC<TileProps> = ({ e, onSelect, isFBlock }) => {
   
   let style: React.CSSProperties = {};
 
+  // Grid Logic:
+  // Row 1 is now the Group Numbers Header.
+  // Period 1 starts at Row 2.
+  // Period 2 -> Row 3, etc.
   if (!isFBlock) {
-    if (e.number === 1) style = { gridRow: 1, gridColumn: 1 };
-    else if (e.number === 2) style = { gridRow: 1, gridColumn: 18 };
-    else if (e.number >= 3 && e.number <= 4) style = { gridRow: 2, gridColumn: e.number - 2 };
-    else if (e.number >= 5 && e.number <= 10) style = { gridRow: 2, gridColumn: e.number + 8 };
-    else if (e.number >= 11 && e.number <= 12) style = { gridRow: 3, gridColumn: e.number - 10 };
-    else if (e.number >= 13 && e.number <= 18) style = { gridRow: 3, gridColumn: e.number }; 
-    else if (e.number >= 19 && e.number <= 36) style = { gridRow: 4, gridColumn: e.number - 18 };
-    else if (e.number >= 37 && e.number <= 54) style = { gridRow: 5, gridColumn: e.number - 36 };
-    else if (e.number >= 55 && e.number <= 56) style = { gridRow: 6, gridColumn: e.number - 54 };
-    else if (e.number >= 72 && e.number <= 86) style = { gridRow: 6, gridColumn: e.number - 68 };
-    else if (e.number >= 87 && e.number <= 88) style = { gridRow: 7, gridColumn: e.number - 86 };
-    else if (e.number >= 104 && e.number <= 118) style = { gridRow: 7, gridColumn: e.number - 100 };
+    if (e.number === 1) style = { gridRow: 2, gridColumn: 1 };
+    else if (e.number === 2) style = { gridRow: 2, gridColumn: 18 };
+    else if (e.number >= 3 && e.number <= 4) style = { gridRow: 3, gridColumn: e.number - 2 };
+    else if (e.number >= 5 && e.number <= 10) style = { gridRow: 3, gridColumn: e.number + 8 };
+    else if (e.number >= 11 && e.number <= 12) style = { gridRow: 4, gridColumn: e.number - 10 };
+    else if (e.number >= 13 && e.number <= 18) style = { gridRow: 4, gridColumn: e.number }; 
+    else if (e.number >= 19 && e.number <= 36) style = { gridRow: 5, gridColumn: e.number - 18 };
+    else if (e.number >= 37 && e.number <= 54) style = { gridRow: 6, gridColumn: e.number - 36 };
+    else if (e.number >= 55 && e.number <= 56) style = { gridRow: 7, gridColumn: e.number - 54 };
+    else if (e.number >= 72 && e.number <= 86) style = { gridRow: 7, gridColumn: e.number - 68 };
+    else if (e.number >= 87 && e.number <= 88) style = { gridRow: 8, gridColumn: e.number - 86 };
+    else if (e.number >= 104 && e.number <= 118) style = { gridRow: 8, gridColumn: e.number - 100 };
   }
 
   return (
@@ -145,8 +149,7 @@ const PeriodicTable: React.FC<PeriodicTableProps> = ({ onSelect }) => {
     const delta = -e.deltaY * zoomSensitivity;
     const newScale = Math.min(Math.max(transform.scale + delta, 0.2), 3);
     
-    // Zoom towards center of container for simplicity, or mouse position if we wanted complex math
-    // Keeping it simple: Zoom center usually works fine for this UI
+    // Zoom towards center of container for simplicity
     setTransform(prev => ({ ...prev, scale: newScale }));
   };
 
@@ -173,9 +176,6 @@ const PeriodicTable: React.FC<PeriodicTableProps> = ({ onSelect }) => {
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    // Prevent default browser scrolling
-    // e.preventDefault() is handled by CSS touch-action: none usually, but we might need it here depending on browser support
-    
     if (isDragging && e.touches.length === 1) {
       const dx = e.touches[0].clientX - gesture.current.startX;
       const dy = e.touches[0].clientY - gesture.current.startY;
@@ -224,13 +224,15 @@ const PeriodicTable: React.FC<PeriodicTableProps> = ({ onSelect }) => {
   const lanthanides = ELEMENTS.filter(e => isLanthanide(e.number));
   const actinides = ELEMENTS.filter(e => isActinide(e.number));
 
+  const groupNumbers = Array.from({ length: 18 }, (_, i) => i + 1);
+
   return (
     <div className="w-full h-full flex flex-col items-center">
       
       {/* Floating Controls */}
-      <div className="sticky top-20 z-30 flex items-center gap-2 bg-[#1e293b]/90 backdrop-blur-md p-1.5 rounded-full border border-white/10 shadow-xl mb-4 pointer-events-auto">
-        <button onClick={zoomOut} className="p-2 hover:bg-white/10 rounded-full text-white/70 hover:text-white transition-colors" title="Zoom Out"><ZoomOut size={18} /></button>
-        <button onClick={zoomIn} className="p-2 hover:bg-white/10 rounded-full text-white/70 hover:text-white transition-colors" title="Zoom In"><ZoomIn size={18} /></button>
+      <div className="sticky top-4 z-30 flex items-center gap-2 bg-[#1e293b]/90 backdrop-blur-md p-1.5 rounded-full border border-white/10 shadow-xl mb-2 pointer-events-auto">
+        <button onClick={zoomOut} className="p-2 hover:bg-white/10 rounded-full text-white/70 hover:text-white transition-colors" title="Zoom Out"><ZoomOut size={16} /></button>
+        <button onClick={zoomIn} className="p-2 hover:bg-white/10 rounded-full text-white/70 hover:text-white transition-colors" title="Zoom In"><ZoomIn size={16} /></button>
         <div className="w-px h-4 bg-white/10 mx-1"></div>
         <button onClick={reset} className="p-2 hover:bg-white/10 rounded-full text-white/70 hover:text-white transition-colors" title="Reset View"><RotateCcw size={14} /></button>
         <div className="hidden md:flex items-center gap-1 ml-2 text-xs text-white/30 border-l border-white/10 pl-2">
@@ -238,10 +240,10 @@ const PeriodicTable: React.FC<PeriodicTableProps> = ({ onSelect }) => {
         </div>
       </div>
 
-      {/* Viewport Container */}
+      {/* Viewport Container - Increased Height */}
       <div 
         ref={containerRef}
-        className="relative w-full h-[65vh] md:h-[75vh] overflow-hidden bg-white/5 border border-white/5 rounded-xl cursor-grab active:cursor-grabbing touch-none shadow-inner"
+        className="relative w-full h-[70vh] md:h-[80vh] overflow-hidden bg-white/5 border border-white/5 rounded-xl cursor-grab active:cursor-grabbing touch-none shadow-inner"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -259,15 +261,22 @@ const PeriodicTable: React.FC<PeriodicTableProps> = ({ onSelect }) => {
           }}
         >
           <div className="min-w-[900px] flex flex-col items-center select-none pb-20">
-            {/* Main Grid: 18 Columns */}
+            {/* Main Grid: 18 Columns, 8 Rows (1 Header + 7 Periods) */}
             <div 
               className="grid gap-1 md:gap-2 w-full mb-4" 
-              style={{ gridTemplateColumns: 'repeat(18, minmax(0, 1fr))', gridTemplateRows: 'repeat(7, 1fr)' }}
+              style={{ gridTemplateColumns: 'repeat(18, minmax(0, 1fr))', gridTemplateRows: 'repeat(8, 1fr)' }}
             >
+              {/* Group Numbers Header */}
+              {groupNumbers.map(num => (
+                <div key={`group-${num}`} style={{ gridRow: 1, gridColumn: num }} className="flex items-end justify-center pb-2 text-white/30 text-xs font-mono">
+                  {num}
+                </div>
+              ))}
+
               {mainTableElements.map(e => <Tile key={e.number} e={e} onSelect={(el) => !gesture.current.hasMoved && onSelect(el)} />)}
               
-              <div style={{ gridRow: 6, gridColumn: 3 }} className="border border-white/10 rounded-md flex items-center justify-center text-xs text-white/40 font-mono">57-71</div>
-              <div style={{ gridRow: 7, gridColumn: 3 }} className="border border-white/10 rounded-md flex items-center justify-center text-xs text-white/40 font-mono">89-103</div>
+              <div style={{ gridRow: 7, gridColumn: 3 }} className="border border-white/10 rounded-md flex items-center justify-center text-xs text-white/40 font-mono">57-71</div>
+              <div style={{ gridRow: 8, gridColumn: 3 }} className="border border-white/10 rounded-md flex items-center justify-center text-xs text-white/40 font-mono">89-103</div>
             </div>
 
             {/* F-Block */}
