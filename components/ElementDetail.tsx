@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { X, Layers, Activity, BookOpen, AlertTriangle, Atom, Zap, Scale, Thermometer } from 'lucide-react';
+import { X, Layers, Activity, BookOpen, AlertTriangle, Atom, Zap, Scale, Thermometer, Battery, FlaskConical, Flame, Box } from 'lucide-react';
 import { ElementData, Language, VisualMode } from '../types';
 import { getCategoryColor, getCategoryGlow } from '../utils/colors';
 import { AtomVisualizer } from './Atom3D';
@@ -17,8 +17,6 @@ const ElementDetail: React.FC<DetailProps> = ({ element, onClose, lang, isClosin
   const [visualMode, setVisualMode] = useState<VisualMode>('bohr');
   
   // Calculate transform-origin dynamically
-  // The modal content is centered in the viewport.
-  // We need to find the offset of the originRect center relative to the window center.
   const animationStyle = useMemo(() => {
     if (!originRect) return {};
 
@@ -82,13 +80,14 @@ const ElementDetail: React.FC<DetailProps> = ({ element, onClose, lang, isClosin
         </button>
 
         {/* Left: 3D Visualization Area */}
-        <div className="w-full md:w-1/2 h-[40vh] md:h-full relative bg-gradient-to-b from-black/40 to-transparent p-4 flex flex-col">
-          <div className="flex-1 relative">
-            <AtomVisualizer element={element} mode={visualMode} color={color} />
+        <div className="w-full md:w-1/2 h-[40vh] md:h-full relative bg-gradient-to-b from-black/60 to-transparent">
+          {/* Absolute positioning to guarantee dimensions and correct centering */}
+          <div className="absolute inset-0 z-0">
+             <AtomVisualizer element={element} mode={visualMode} color={color} />
           </div>
           
           {/* Mode Toggle */}
-          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 bg-black/60 p-1 rounded-full border border-white/10 backdrop-blur-md">
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 bg-black/60 p-1 rounded-full border border-white/10 backdrop-blur-md z-20">
             <button
               onClick={() => setVisualMode('bohr')}
               className={`px-4 py-2 rounded-full text-sm font-medium transition-all flex items-center gap-2 ${visualMode === 'bohr' ? 'bg-white text-black' : 'text-white/70 hover:text-white'}`}
@@ -186,6 +185,55 @@ const ElementDetail: React.FC<DetailProps> = ({ element, onClose, lang, isClosin
                   {element.electron_affinity ? `${element.electron_affinity} kJ/mol` : 'N/A'}
                 </div>
               </div>
+              {element.standard_electrode_potential && (
+                <div className="col-span-2 mt-2 pt-4 border-t border-white/5">
+                  <span className="block text-xs text-white/40 mb-1 flex items-center gap-2">
+                    <Battery size={12} /> {lang === 'en' ? 'Standard Electrode Potential' : '标准电极电势'}
+                  </span>
+                  <div className="text-lg font-mono text-blue-400">
+                    {element.standard_electrode_potential}
+                  </div>
+                </div>
+              )}
+            </div>
+          </section>
+
+          {/* Reactivity & Isotopes */}
+          <section className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-white/5 p-4 rounded-xl border border-white/5">
+              <h3 className="text-xs uppercase tracking-widest text-white/40 mb-3 flex items-center gap-2">
+                <FlaskConical size={12} /> {lang === 'en' ? 'Reactivity' : '反应活性'}
+              </h3>
+              <p className="text-sm text-white/80 leading-relaxed mb-2">
+                {lang === 'en' ? element.reactivity_en : element.reactivity_cn || 'N/A'}
+              </p>
+              {element.reactivity_vs_hydrogen_en && (
+                <div className="mt-2 pt-2 border-t border-white/5">
+                  <span className="text-[10px] uppercase tracking-wider text-white/30 block mb-1">
+                    {lang === 'en' ? 'vs. Hydrogen' : '与氢对比'}
+                  </span>
+                  <p className="text-sm text-blue-400 font-medium">
+                    {lang === 'en' ? element.reactivity_vs_hydrogen_en : element.reactivity_vs_hydrogen_cn}
+                  </p>
+                </div>
+              )}
+            </div>
+            <div className="bg-white/5 p-4 rounded-xl border border-white/5">
+              <h3 className="text-xs uppercase tracking-widest text-white/40 mb-3 flex items-center gap-2">
+                <Atom size={12} /> {lang === 'en' ? 'Common Isotopes' : '常见同位素'}
+              </h3>
+              {element.isotopes && element.isotopes.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {element.isotopes.map((iso, idx) => (
+                    <div key={idx} className="bg-white/10 px-2 py-1 rounded text-xs font-mono flex flex-col items-center min-w-[50px]">
+                      <span className="text-white/90 font-bold">{iso.mass_number}</span>
+                      <span className="text-white/40 text-[10px]">{iso.abundance}%</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <span className="text-sm text-white/40 italic">N/A</span>
+              )}
             </div>
           </section>
 
@@ -214,6 +262,54 @@ const ElementDetail: React.FC<DetailProps> = ({ element, onClose, lang, isClosin
              <div className="grid grid-cols-1 gap-4">
                 <DensityChart element={element} color={color} lang={lang} />
              </div>
+          </section>
+
+          {/* Thermodynamic & Crystallographic Data */}
+          <section className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-white/5 p-4 rounded-xl border border-white/5">
+              <h3 className="text-xs uppercase tracking-widest text-white/40 mb-4 flex items-center gap-2">
+                <Flame size={12} /> {lang === 'en' ? 'Thermodynamics' : '热力学参数'}
+              </h3>
+              <div className="space-y-3">
+                <div>
+                  <span className="block text-[10px] text-white/30 uppercase tracking-wider">{lang === 'en' ? 'Enthalpy of Fusion' : '熔化热'}</span>
+                  <div className="text-sm font-mono text-white/90">
+                    {element.enthalpy_of_fusion ? `${element.enthalpy_of_fusion} kJ/mol` : 'N/A'}
+                  </div>
+                </div>
+                <div>
+                  <span className="block text-[10px] text-white/30 uppercase tracking-wider">{lang === 'en' ? 'Enthalpy of Vaporization' : '汽化热'}</span>
+                  <div className="text-sm font-mono text-white/90">
+                    {element.enthalpy_of_vaporization ? `${element.enthalpy_of_vaporization} kJ/mol` : 'N/A'}
+                  </div>
+                </div>
+                <div>
+                  <span className="block text-[10px] text-white/30 uppercase tracking-wider">{lang === 'en' ? 'Specific Heat Capacity' : '比热容'}</span>
+                  <div className="text-sm font-mono text-white/90">
+                    {element.specific_heat_capacity ? `${element.specific_heat_capacity} J/(g·K)` : 'N/A'}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white/5 p-4 rounded-xl border border-white/5">
+              <h3 className="text-xs uppercase tracking-widest text-white/40 mb-4 flex items-center gap-2">
+                <Box size={12} /> {lang === 'en' ? 'Crystallography' : '晶体学数据'}
+              </h3>
+              <div className="space-y-3">
+                <div>
+                  <span className="block text-[10px] text-white/30 uppercase tracking-wider">{lang === 'en' ? 'Crystal Structure' : '晶体结构'}</span>
+                  <div className="text-sm font-mono text-white/90">
+                    {element.crystal_structure || 'N/A'}
+                  </div>
+                </div>
+                <div>
+                  <span className="block text-[10px] text-white/30 uppercase tracking-wider">{lang === 'en' ? 'Lattice Constants' : '晶格常数'}</span>
+                  <div className="text-sm font-mono text-white/90">
+                    {element.lattice_constants || 'N/A'}
+                  </div>
+                </div>
+              </div>
+            </div>
           </section>
 
           {/* History & Story */}

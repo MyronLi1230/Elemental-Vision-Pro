@@ -10,6 +10,11 @@ export type ElementCategory =
   | 'actinide'
   | 'unknown';
 
+export interface Isotope {
+  mass_number: number;
+  abundance: number; // percentage, e.g. 99.98
+}
+
 export interface ElementData {
   number: number;
   symbol: string;
@@ -38,6 +43,17 @@ export interface ElementData {
   hazard_en?: string;
   hazard_cn?: string;
   cpk_hex: string; // Standard CPK color for visualization
+  isotopes?: Isotope[];
+  reactivity_en?: string;
+  reactivity_cn?: string;
+  reactivity_vs_hydrogen_en?: string;
+  reactivity_vs_hydrogen_cn?: string;
+  standard_electrode_potential?: string; // e.g. "-2.71 V"
+  enthalpy_of_fusion?: number | null; // kJ/mol
+  enthalpy_of_vaporization?: number | null; // kJ/mol
+  specific_heat_capacity?: number | null; // J/(g·K)
+  crystal_structure?: string | null;
+  lattice_constants?: string | null;
 }
 
 export type VisualMode = 'bohr' | 'cloud';

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ElementData, Language } from './types';
 import PeriodicTable from './components/PeriodicTable';
 import ElementDetail from './components/ElementDetail';
-import { Search, Globe, Box } from 'lucide-react';
+import { Globe, Box } from 'lucide-react';
 import { ELEMENTS } from './data/elementData';
 
 const App: React.FC = () => {
@@ -52,56 +52,22 @@ const App: React.FC = () => {
           </span>
         </div>
 
-        {/* Search Bar */}
-        <div className="relative max-w-sm w-full mx-2">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" size={14} />
-            <input 
-              type="text" 
-              placeholder={lang === 'en' ? "Search..." : "搜索元素..."}
-              className="w-full bg-white/5 border border-white/10 rounded-full py-1.5 pl-9 pr-4 focus:outline-none focus:border-emerald-500/50 focus:bg-white/10 transition-all text-xs md:text-sm"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-          
-          {/* Search Dropdown */}
-          {searchQuery && (
-            <div className="absolute top-full mt-2 left-0 right-0 bg-[#1e293b] border border-white/10 rounded-xl shadow-2xl max-h-60 overflow-y-auto z-50">
-              {filteredElements.length > 0 ? (
-                filteredElements.map(e => (
-                  <button 
-                    key={e.number}
-                    onClick={() => handleOpen(e)}
-                    className="w-full text-left px-4 py-2 hover:bg-white/5 flex items-center justify-between border-b border-white/5 last:border-0"
-                  >
-                    <div>
-                      <span className="font-bold text-emerald-400 w-8 inline-block text-sm">{e.symbol}</span>
-                      <span className="text-white/80 text-sm">{lang === 'en' ? e.name_en : e.name_cn}</span>
-                    </div>
-                    <span className="text-xs text-white/30">#{e.number}</span>
-                  </button>
-                ))
-              ) : (
-                <div className="p-4 text-center text-white/40 text-xs">No results found</div>
-              )}
-            </div>
-          )}
+        {/* Header Right Controls */}
+        <div className="flex items-center gap-4">
+          {/* Language Toggle */}
+          <button 
+            onClick={() => setLang(prev => prev === 'en' ? 'zh' : 'en')}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-white/5 border border-transparent hover:border-white/10 transition-all text-xs font-medium"
+          >
+            <Globe size={14} />
+            <span className="uppercase">{lang}</span>
+          </button>
         </div>
-
-        {/* Language Toggle */}
-        <button 
-          onClick={() => setLang(prev => prev === 'en' ? 'zh' : 'en')}
-          className="flex items-center gap-1.5 px-2 py-1 rounded-full hover:bg-white/5 border border-transparent hover:border-white/10 transition-all text-xs font-medium"
-        >
-          <Globe size={14} />
-          <span className="uppercase">{lang}</span>
-        </button>
       </header>
 
       {/* Main Content */}
-      <main className="pt-16 px-2 md:px-4 flex-1 flex flex-col h-full">
-        <div className="text-center mb-2 shrink-0">
+      <main className="pt-14 px-2 md:px-4 flex-1 flex flex-col h-full">
+        <div className="text-center mb-2 mt-1 shrink-0">
           <h2 className="text-xl md:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-emerald-300 via-teal-200 to-blue-300 mb-1">
              {lang === 'en' ? 'See the Unseen' : '看见不可见'}
           </h2>
@@ -113,7 +79,13 @@ const App: React.FC = () => {
         </div>
 
         <div className="flex-1 min-h-0 relative">
-          <PeriodicTable onSelect={handleOpen} />
+          <PeriodicTable 
+            onSelect={handleOpen} 
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            filteredElements={filteredElements}
+            lang={lang}
+          />
         </div>
       </main>
 

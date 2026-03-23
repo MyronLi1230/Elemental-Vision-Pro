@@ -1,11 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ELEMENTS } from '../data/elementData';
-import { ElementData } from '../types';
+import { ElementData, Language } from '../types';
 import { getCategoryColor } from '../utils/colors';
-import { ZoomIn, ZoomOut, RotateCcw, Move } from 'lucide-react';
+import { ZoomIn, ZoomOut, RotateCcw, Move, Search, X } from 'lucide-react';
 
 interface PeriodicTableProps {
   onSelect: (element: ElementData, rect?: DOMRect) => void;
+  searchQuery: string;
+  setSearchQuery: (q: string) => void;
+  filteredElements: ElementData[];
+  lang: Language;
 }
 
 interface TileProps {
@@ -65,12 +69,13 @@ const Tile: React.FC<TileProps> = ({ e, onSelect, isFBlock }) => {
   );
 };
 
-const PeriodicTable: React.FC<PeriodicTableProps> = ({ onSelect }) => {
+const PeriodicTable: React.FC<PeriodicTableProps> = ({ onSelect, searchQuery, setSearchQuery, filteredElements, lang }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   
   // Pan and Zoom State
   const [transform, setTransform] = useState({ x: 0, y: 0, scale: 1 });
   const [isDragging, setIsDragging] = useState(false);
+  const [showSearchInput, setShowSearchInput] = useState(false);
   
   // Refs for gesture calculations
   const gesture = useRef({
@@ -217,16 +222,71 @@ const PeriodicTable: React.FC<PeriodicTableProps> = ({ onSelect }) => {
   const groupNumbers = Array.from({ length: 18 }, (_, i) => i + 1);
 
   return (
-    <div className="w-full h-full flex flex-col items-center">
+    <div className="w-full h-full flex flex-col items-center relative">
       
-      {/* Floating Controls */}
-      <div className="sticky top-4 z-30 flex items-center gap-2 bg-[#1e293b]/90 backdrop-blur-md p-1.5 rounded-full border border-white/10 shadow-xl mb-2 pointer-events-auto">
+      {/* Search Results Dropdown (Absolute positioned relative to container) */}
+      {searchQuery && (
+         <div className="absolute top-16 z-40 bg-[#1e293b] border border-white/10 rounded-xl shadow-2xl max-h-60 overflow-y-auto w-64 md:w-80 custom-scrollbar">
+            {filteredElements.length > 0 ? (
+               filteredElements.map(e => (
+                  <button 
+                  key={e.number}
+                  onClick={() => onSelect(e)}
+                  className="w-full text-left px-4 py-2 hover:bg-white/5 flex items-center justify-between border-b border-white/5 last:border-0 text-sm"
+                  >
+                  <div>
+                     <span className="font-bold text-emerald-400 w-8 inline-block">{e.symbol}</span>
+                     <span className="text-white/80">{lang === 'en' ? e.name_en : e.name_cn}</span>
+                  </div>
+                  <span className="text-xs text-white/30">#{e.number}</span>
+                  </button>
+               ))
+            ) : (
+               <div className="p-4 text-center text-white/40 text-xs">No results found</div>
+            )}
+         </div>
+      )}
+
+      {/* Floating Controls with Search */}
+      <div className="sticky top-4 z-30 flex items-center gap-2 bg-[#1e293b]/90 backdrop-blur-md p-1.5 rounded-full border border-white/10 shadow-xl mb-2 pointer-events-auto transition-all">
+        
+        {/* Search Input Area */}
+        <div className={`flex items-center transition-all duration-300 overflow-hidden ${showSearchInput || searchQuery ? 'w-32 md:w-48 px-2' : 'w-0'}`}>
+           <input 
+             type="text"
+             className="w-full bg-transparent border-none outline-none text-xs text-white placeholder-white/40"
+             placeholder={lang === 'en' ? "Search..." : "搜索..."}
+             value={searchQuery}
+             onChange={(e) => setSearchQuery(e.target.value)}
+             autoFocus={showSearchInput}
+             onBlur={() => !searchQuery && setShowSearchInput(false)}
+           />
+           {searchQuery && (
+             <button onClick={() => setSearchQuery('')} className="ml-1 text-white/40 hover:text-white">
+               <X size={12} />
+             </button>
+           )}
+        </div>
+        
+        <button 
+          onClick={() => setShowSearchInput(true)} 
+          className={`p-2 hover:bg-white/10 rounded-full transition-colors ${showSearchInput || searchQuery ? 'text-emerald-400 bg-white/5' : 'text-white/70 hover:text-white'}`}
+          title="Search"
+        >
+           <Search size={16} />
+        </button>
+
+        <div className="w-px h-4 bg-white/10 mx-1"></div>
+
         <button onClick={zoomOut} className="p-2 hover:bg-white/10 rounded-full text-white/70 hover:text-white transition-colors" title="Zoom Out"><ZoomOut size={16} /></button>
         <button onClick={zoomIn} className="p-2 hover:bg-white/10 rounded-full text-white/70 hover:text-white transition-colors" title="Zoom In"><ZoomIn size={16} /></button>
+        
         <div className="w-px h-4 bg-white/10 mx-1"></div>
+        
         <button onClick={reset} className="p-2 hover:bg-white/10 rounded-full text-white/70 hover:text-white transition-colors" title="Reset View"><RotateCcw size={14} /></button>
-        <div className="hidden md:flex items-center gap-1 ml-2 text-xs text-white/30 border-l border-white/10 pl-2">
-           <Move size={10} /> <span>Drag to Pan</span>
+        
+        <div className="hidden md:flex items-center gap-1 ml-2 text-xs text-white/30 border-l border-white/10 pl-2 pr-2">
+           <Move size={10} /> <span>Drag</span>
         </div>
       </div>
 

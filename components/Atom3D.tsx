@@ -153,26 +153,32 @@ const SceneContent: React.FC<AtomProps> = ({ element, mode, color }) => {
 };
 
 export const AtomVisualizer: React.FC<AtomProps> = (props) => {
+  // Calculate dynamic camera distance based on number of shells
+  // Reduced distance to zoom in the model significantly
+  const shellCount = props.element.shells.length;
+  const dynamicZ = 8 + (shellCount * 2.8);
+
   return (
-    <div className="w-full h-full relative rounded-xl overflow-hidden shadow-2xl bg-black/40 backdrop-blur-sm border border-white/10">
-      <Canvas camera={{ position: [0, 0, 30], fov: 35 }}>
+    // Full size container
+    <div className="w-full h-full relative overflow-hidden bg-transparent">
+      <Canvas camera={{ position: [0, 0, dynamicZ], fov: 35 }}>
         <Stars radius={100} depth={50} count={3000} factor={4} saturation={0} fade speed={0.5} />
         <SceneContent {...props} />
         {/* Restrict OrbitControls to prevent rotating the 2D plane, allow Zoom only */}
         <OrbitControls 
           enableRotate={props.mode === 'cloud'} // Allow rotation only for cloud mode
           enableZoom={true} 
-          minDistance={10} 
-          maxDistance={50} 
+          minDistance={2} 
+          maxDistance={100} 
           enablePan={true}
         />
       </Canvas>
       
-      <div className="absolute bottom-4 left-4 flex flex-col gap-1 pointer-events-none select-none">
-         <span className="text-white text-xs font-bold uppercase tracking-wider">
+      <div className="absolute bottom-6 left-6 flex flex-col gap-1 pointer-events-none select-none z-10">
+         <span className="text-white text-xs font-bold uppercase tracking-wider shadow-black drop-shadow-md">
            {props.mode === 'bohr' ? 'Bohr Model (2D)' : 'Quantum Cloud'}
          </span>
-         <span className="text-white/40 text-[10px]">
+         <span className="text-white/40 text-[10px] shadow-black drop-shadow-md">
            {props.mode === 'bohr' ? 'Planar Shell Representation' : 'Probability Density Distribution'}
          </span>
       </div>
