@@ -48,7 +48,7 @@ const App: React.FC = () => {
             <Box size={16} className="text-black" />
           </div>
           <span className="font-bold text-lg tracking-tight hidden md:block">
-            {lang === 'en' ? 'Elemental Vision' : '元素视界'}
+            {lang === 'en' ? 'Atomic Vision' : '原子视界'}
           </span>
         </div>
 
