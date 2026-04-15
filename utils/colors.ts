@@ -19,3 +19,19 @@ export const getCategoryGlow = (category: ElementCategory): string => {
   const color = getCategoryColor(category);
   return `0 0 15px ${color}80, 0 0 30px ${color}40`; // Neon glow effect
 };
+
+export const getCategoryName = (category: ElementCategory, lang: 'en' | 'zh'): string => {
+  const names: Record<ElementCategory, { en: string; zh: string }> = {
+    'alkali-metal': { en: 'Alkali Metal', zh: '碱金属' },
+    'alkaline-earth-metal': { en: 'Alkaline Earth Metal', zh: '碱土金属' },
+    'transition-metal': { en: 'Transition Metal', zh: '过渡金属' },
+    'post-transition-metal': { en: 'Post-transition Metal', zh: '后过渡金属' },
+    'metalloid': { en: 'Metalloid', zh: '类金属' },
+    'reactive-nonmetal': { en: 'Reactive Nonmetal', zh: '活泼非金属' },
+    'noble-gas': { en: 'Noble Gas', zh: '稀有气体' },
+    'lanthanide': { en: 'Lanthanide', zh: '镧系元素' },
+    'actinide': { en: 'Actinide', zh: '锕系元素' },
+    'unknown': { en: 'Unknown', zh: '未知' }
+  };
+  return names[category][lang];
+};

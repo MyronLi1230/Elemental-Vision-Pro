@@ -31,6 +31,8 @@ export interface ElementData {
   electron_affinity?: number; // kJ/mol
   electronegativity?: number; // Pauling
   atomic_radius?: number; // pm
+  ionic_radius?: number; // pm
+  ion_symbol?: string; // e.g. "Li+"
   melting_point?: number; // Kelvin
   boiling_point?: number; // Kelvin
   density?: number; // g/cm3
@@ -58,3 +60,16 @@ export interface ElementData {
 
 export type VisualMode = 'bohr' | 'cloud';
 export type Language = 'en' | 'zh';
+export type TableMode = 'standard' | 'electronegativity' | 'atomic_radius' | 'ionic_radius' | 'melting_point' | 'boiling_point' | 'density' | 'ionization_energy' | 'electron_affinity' | 'blocks';
+
+export type Classification = 'metal' | 'non-metal' | 'metalloid';
+export type Block = 's' | 'p' | 'd' | 'f';
+export type PeriodFilter = number | 'lanthanide' | 'actinide';
+
+export interface FilterState {
+  classification: Classification | null;
+  category: ElementCategory | null;
+  group: number | null;
+  block: Block | null;
+  period: PeriodFilter | null;
+}

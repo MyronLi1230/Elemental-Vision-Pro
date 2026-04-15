@@ -1,8 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ELEMENTS } from '../data/elementData';
-import { ElementData, Language } from '../types';
-import { getCategoryColor } from '../utils/colors';
-import { ZoomIn, ZoomOut, RotateCcw, Move, Search, X } from 'lucide-react';
+import { ElementData, Language, TableMode, FilterState, Classification, PeriodFilter } from '../types';
+import { getCategoryColor, getCategoryName } from '../utils/colors';
+import { ZoomIn, ZoomOut, RotateCcw, Move, Search, X, Info, FlaskConical, Zap, Activity } from 'lucide-react';
+
+import { CATEGORY_DESCRIPTIONS, CLASSIFICATION_DESCRIPTIONS } from '../data/categoryDescriptions';
+import { GROUP_DESCRIPTIONS, PERIOD_DESCRIPTIONS, BLOCK_DESCRIPTIONS } from '../data/groupPeriodBlockDescriptions';
 
 interface PeriodicTableProps {
   onSelect: (element: ElementData, rect?: DOMRect) => void;
@@ -10,72 +13,391 @@ interface PeriodicTableProps {
   setSearchQuery: (q: string) => void;
   filteredElements: ElementData[];
   lang: Language;
+  temperature: number;
+  tableMode: TableMode;
+  historyYear: number;
+  filters: FilterState;
+  hoveredClassification?: Classification | null;
 }
 
 interface TileProps {
   e: ElementData;
   onSelect: (element: ElementData, rect?: DOMRect) => void;
   isFBlock?: boolean;
+  temperature: number;
+  tableMode: TableMode;
+  historyYear: number;
+  lang: Language;
+  hoveredGroup: number | null;
+  hoveredPeriod: PeriodFilter | null;
+  setHoveredGroup: (g: number | null) => void;
+  setHoveredPeriod: (p: PeriodFilter | null) => void;
+  setHoveredElement: (e: ElementData | null) => void;
+  onHover: (e: ElementData | null, g: number | null, p: PeriodFilter | null, b: string | null) => void;
+  filters: FilterState;
 }
 
-const Tile: React.FC<TileProps> = ({ e, onSelect, isFBlock }) => {
-  const color = getCategoryColor(e.category);
+const isLanthanide = (n: number) => n >= 57 && n <= 71;
+const isActinide = (n: number) => n >= 89 && n <= 103;
+
+const MODE_DESCRIPTIONS: Record<TableMode, { en: string; zh: string }> = {
+  standard: {
+    en: 'Standard view showing element categories and physical phases at given temperature.',
+    zh: '标准视图，显示元素类别及在给定温度下的物理物相。'
+  },
+  electronegativity: {
+    en: 'A measure of the tendency of an atom to attract a bonding pair of electrons.',
+    zh: '衡量原子吸引成键电子对能力的物理量。'
+  },
+  atomic_radius: {
+    en: 'The typical distance from the center of the nucleus to the boundary of the surrounding shells of electrons.',
+    zh: '从原子核中心到其最外层电子的平均距离。'
+  },
+  ionic_radius: {
+    en: 'The radius of a monatomic ion in an ionic crystal structure.',
+    zh: '离子晶体结构中单原子离子的半径。'
+  },
+  melting_point: {
+    en: 'The temperature at which a substance changes from solid to liquid at atmospheric pressure.',
+    zh: '物质在常压下由固态转变为液态时的温度。'
+  },
+  boiling_point: {
+    en: 'The temperature at which a substance changes from liquid to gas at atmospheric pressure.',
+    zh: '物质在常压下由液态转变为气态时的温度。'
+  },
+  density: {
+    en: 'The mass per unit volume of a substance.',
+    zh: '物质单位体积的质量。'
+  },
+  ionization_energy: {
+    en: 'The minimum energy required to remove the most loosely bound electron of an isolated neutral gaseous atom.',
+    zh: '从气态原子中移除一个电子所需的最小能量。'
+  },
+  electron_affinity: {
+    en: 'The amount of energy released when an electron is added to a neutral atom in the gaseous state.',
+    zh: '气态原子获得一个电子形成负离子时释放的能量。'
+  },
+  blocks: {
+    en: 'Elements grouped by their highest-energy electron subshell (s, p, d, f).',
+    zh: '根据最高能量电子亚层（s, p, d, f）对元素进行分组。'
+  }
+};
+
+const Tile: React.FC<TileProps> = ({ 
+  e, onSelect, isFBlock, temperature, tableMode, historyYear, lang,
+  hoveredGroup, hoveredPeriod, setHoveredGroup, setHoveredPeriod, setHoveredElement,
+  onHover, filters
+}) => {
+  // History Logic
+  const discYear = e.discovery_year === 'Ancient' ? 0 : parseInt(e.discovery_year || '0');
+  const isDiscovered = discYear <= historyYear;
+
+  // Determine Group and Period
+  let group = 0;
+  let period = 0;
+
+  if (e.number === 1) { group = 1; period = 1; }
+  else if (e.number === 2) { group = 18; period = 1; }
+  else if (e.number >= 3 && e.number <= 4) { group = e.number - 2; period = 2; }
+  else if (e.number >= 5 && e.number <= 10) { group = e.number + 8; period = 2; }
+  else if (e.number >= 11 && e.number <= 12) { group = e.number - 10; period = 3; }
+  else if (e.number >= 13 && e.number <= 18) { group = e.number; period = 3; }
+  else if (e.number >= 19 && e.number <= 36) { group = e.number - 18; period = 4; }
+  else if (e.number >= 37 && e.number <= 54) { group = e.number - 36; period = 5; }
+  else if (e.number >= 55 && e.number <= 56) { group = e.number - 54; period = 6; }
+  else if (e.number >= 72 && e.number <= 86) { group = e.number - 68; period = 6; }
+  else if (e.number >= 87 && e.number <= 88) { group = e.number - 86; period = 7; }
+  else if (e.number >= 104 && e.number <= 118) { group = e.number - 100; period = 7; }
+  else if (e.number >= 57 && e.number <= 71) { group = 3; period = 6; } // Lanthanides
+  else if (e.number >= 89 && e.number <= 103) { group = 3; period = 7; } // Actinides
+
+  // Phase Logic
+  const isGas = e.boiling_point ? temperature >= e.boiling_point : e.phase === 'Gas';
+  const isLiquid = e.melting_point && e.boiling_point ? (temperature >= e.melting_point && temperature < e.boiling_point) : e.phase === 'Liquid';
+  const isSolid = e.melting_point ? temperature < e.melting_point : e.phase === 'Solid';
+
+  const block = (group <= 2 || e.number === 2) ? 's' : (group >= 13) ? 'p' : (isFBlock || e.number === 57 || e.number === 89) ? 'f' : 'd';
+
+  const phaseColor = isGas ? 'text-red-400' : isLiquid ? 'text-blue-400' : 'text-white';
+
+  // Property Mode Coloring
+  const getPropertyColor = () => {
+    if (tableMode === 'standard') return getCategoryColor(e.category);
+    
+    let value: number | undefined;
+    let min = 0;
+    let max = 1;
+    let colorScale = ['#1e293b', '#10b981']; // Slate to Emerald
+
+    switch (tableMode) {
+      case 'electronegativity':
+        value = e.electronegativity;
+        min = 0.7; max = 4.0;
+        colorScale = ['#1e293b', '#f43f5e']; // Slate to Rose
+        break;
+      case 'atomic_radius':
+        value = e.atomic_radius;
+        min = 30; max = 300;
+        colorScale = ['#1e293b', '#3b82f6']; // Slate to Blue
+        break;
+      case 'ionic_radius':
+        value = e.ionic_radius;
+        min = 30; max = 300;
+        colorScale = ['#1e293b', '#10b981']; // Slate to Emerald
+        break;
+      case 'melting_point':
+        value = e.melting_point;
+        min = 0; max = 4000;
+        colorScale = ['#1e293b', '#f59e0b']; // Slate to Amber
+        break;
+      case 'boiling_point':
+        value = e.boiling_point;
+        min = 0; max = 6000;
+        colorScale = ['#1e293b', '#ef4444']; // Slate to Red
+        break;
+      case 'density':
+        value = e.density;
+        min = 0; max = 23;
+        colorScale = ['#1e293b', '#8b5cf6']; // Slate to Violet
+        break;
+      case 'ionization_energy':
+        value = e.ionization_energy;
+        min = 380; max = 2400;
+        colorScale = ['#1e293b', '#06b6d4']; // Slate to Cyan
+        break;
+      case 'electron_affinity':
+        value = e.electron_affinity;
+        min = -150; max = 350;
+        colorScale = ['#1e293b', '#f97316']; // Slate to Orange
+        break;
+    }
+
+    if (value === undefined) return '#1e293b';
+    const ratio = Math.min(Math.max((value - min) / (max - min), 0), 1);
+    
+    // Simple hex interpolation
+    const lerp = (a: number, b: number, t: number) => Math.round(a + (b - a) * t);
+    const hexToRgb = (hex: string) => {
+      const r = parseInt(hex.slice(1, 3), 16);
+      const g = parseInt(hex.slice(3, 5), 16);
+      const b = parseInt(hex.slice(5, 7), 16);
+      return [r, g, b];
+    };
+    const c1 = hexToRgb(colorScale[0]);
+    const c2 = hexToRgb(colorScale[1]);
+    const r = lerp(c1[0], c2[0], ratio);
+    const g = lerp(c1[1], c2[1], ratio);
+    const b = lerp(c1[2], c2[2], ratio);
+    return `rgb(${r}, ${g}, ${b})`;
+  };
+
+  const color = getPropertyColor();
+  const isHighlighted = (hoveredGroup === group && group !== 0) || (hoveredPeriod === period && period !== 0);
+  
+  // Filter Match Logic
+  const matchesFilters = () => {
+    const hasAnyFilter = filters.classification || filters.group || filters.block || filters.period;
+    if (!hasAnyFilter) return true;
+
+    if (filters.classification) {
+      const metals = ['alkali-metal', 'alkaline-earth-metal', 'transition-metal', 'post-transition-metal', 'lanthanide', 'actinide'];
+      const nonMetals = ['reactive-nonmetal', 'noble-gas'];
+      const metalloids = ['metalloid'];
+
+      if (filters.classification === 'metal' && !metals.includes(e.category)) return false;
+      if (filters.classification === 'non-metal' && !nonMetals.includes(e.category)) return false;
+      if (filters.classification === 'metalloid' && !metalloids.includes(e.category)) return false;
+    }
+
+    if (filters.category && e.category !== filters.category) return false;
+
+    if (filters.group && group !== filters.group) return false;
+    if (filters.block) {
+      const block = (group <= 2 || e.number === 2) ? 's' : (group >= 13) ? 'p' : (isFBlock || e.number === 57 || e.number === 89) ? 'f' : 'd';
+      if (block !== filters.block) return false;
+    }
+    if (filters.period) {
+      if (filters.period === 'lanthanide') {
+        if (!isLanthanide(e.number)) return false;
+      } else if (filters.period === 'actinide') {
+        if (!isActinide(e.number)) return false;
+      } else {
+        if (period !== filters.period || isFBlock) return false;
+      }
+    }
+
+    return true;
+  };
+
+  const getPropertyValue = () => {
+    switch (tableMode) {
+      case 'electronegativity': return e.electronegativity?.toFixed(2) || '-';
+      case 'ionization_energy': return e.ionization_energy?.toFixed(0) || '-';
+      case 'electron_affinity': return e.electron_affinity?.toFixed(0) || '-';
+      case 'density': return e.density?.toFixed(2) || '-';
+      case 'melting_point': return e.melting_point?.toFixed(0) || '-';
+      case 'boiling_point': return e.boiling_point?.toFixed(0) || '-';
+      case 'atomic_radius': return e.atomic_radius?.toFixed(0) || '-';
+      case 'ionic_radius': return e.ionic_radius?.toFixed(0) || '-';
+      default: return e.atomic_mass.toFixed(2);
+    }
+  };
+
+  const isFiltered = !matchesFilters();
   
   let style: React.CSSProperties = {};
 
   // Grid Logic:
   if (!isFBlock) {
-    if (e.number === 1) style = { gridRow: 2, gridColumn: 1 };
-    else if (e.number === 2) style = { gridRow: 2, gridColumn: 18 };
-    else if (e.number >= 3 && e.number <= 4) style = { gridRow: 3, gridColumn: e.number - 2 };
-    else if (e.number >= 5 && e.number <= 10) style = { gridRow: 3, gridColumn: e.number + 8 };
-    else if (e.number >= 11 && e.number <= 12) style = { gridRow: 4, gridColumn: e.number - 10 };
-    else if (e.number >= 13 && e.number <= 18) style = { gridRow: 4, gridColumn: e.number }; 
-    else if (e.number >= 19 && e.number <= 36) style = { gridRow: 5, gridColumn: e.number - 18 };
-    else if (e.number >= 37 && e.number <= 54) style = { gridRow: 6, gridColumn: e.number - 36 };
-    else if (e.number >= 55 && e.number <= 56) style = { gridRow: 7, gridColumn: e.number - 54 };
-    else if (e.number >= 72 && e.number <= 86) style = { gridRow: 7, gridColumn: e.number - 68 };
-    else if (e.number >= 87 && e.number <= 88) style = { gridRow: 8, gridColumn: e.number - 86 };
-    else if (e.number >= 104 && e.number <= 118) style = { gridRow: 8, gridColumn: e.number - 100 };
+    if (e.number === 1) style = { gridRow: 2, gridColumn: 2 };
+    else if (e.number === 2) style = { gridRow: 2, gridColumn: 19 };
+    else if (e.number >= 3 && e.number <= 4) style = { gridRow: 3, gridColumn: e.number - 2 + 1 };
+    else if (e.number >= 5 && e.number <= 10) style = { gridRow: 3, gridColumn: e.number + 8 + 1 };
+    else if (e.number >= 11 && e.number <= 12) style = { gridRow: 4, gridColumn: e.number - 10 + 1 };
+    else if (e.number >= 13 && e.number <= 18) style = { gridRow: 4, gridColumn: e.number + 1 }; 
+    else if (e.number >= 19 && e.number <= 36) style = { gridRow: 5, gridColumn: e.number - 18 + 1 };
+    else if (e.number >= 37 && e.number <= 54) style = { gridRow: 6, gridColumn: e.number - 36 + 1 };
+    else if (e.number >= 55 && e.number <= 56) style = { gridRow: 7, gridColumn: e.number - 54 + 1 };
+    else if (e.number >= 72 && e.number <= 86) style = { gridRow: 7, gridColumn: e.number - 68 + 1 };
+    else if (e.number >= 87 && e.number <= 88) style = { gridRow: 8, gridColumn: e.number - 86 + 1 };
+    else if (e.number >= 104 && e.number <= 118) style = { gridRow: 8, gridColumn: e.number - 100 + 1 };
   }
 
   return (
     <button
       onClick={(evt) => {
-        // Prevent click if we were dragging
         if (evt.defaultPrevented) return;
         const rect = evt.currentTarget.getBoundingClientRect();
         onSelect(e, rect);
       }}
+      onMouseEnter={() => {
+        onHover(e, group, period, block);
+      }}
+      onMouseLeave={() => {
+        onHover(null, null, null, null);
+      }}
       style={style}
       className={`
         relative w-full aspect-square flex flex-col items-center justify-center 
-        border border-white/10 rounded-md transition-all duration-200 
+        border border-white/10 rounded-md transition-all duration-300 
         hover:border-white/50 hover:bg-white/10
         group
         ${isFBlock ? 'hover:scale-110 z-10' : 'hover:scale-110 hover:z-20'}
+        ${isHighlighted ? 'border-white/40 bg-white/5' : ''}
+        ${!isDiscovered ? 'opacity-5 grayscale pointer-events-none' : 'opacity-100'}
+        ${isFiltered ? 'opacity-10 grayscale-[0.5] scale-95' : ''}
       `}
     >
-      <div 
-        className="absolute inset-0 opacity-20 group-hover:opacity-40 transition-opacity rounded-md" 
-        style={{ backgroundColor: color }}
-      ></div>
-      <span className="text-[0.6rem] absolute top-1 left-1 opacity-70 select-none">{e.number}</span>
-      <span className="font-bold text-sm md:text-lg lg:text-xl select-none">{e.symbol}</span>
-      <span className="text-[0.6rem] opacity-70 truncate w-full text-center px-1 hidden sm:block select-none">
-        {e.name_en}
+      {/* Phase Background Effects */}
+      <div className={`absolute inset-0 overflow-hidden rounded-md pointer-events-none transition-all duration-500 ${(tableMode === 'atomic_radius' || tableMode === 'ionic_radius') ? 'opacity-10' : 'opacity-100'}`}>
+        {isGas ? (
+          <div 
+            className="absolute inset-0 opacity-40"
+            style={{ 
+              background: `radial-gradient(circle at center, ${color} 0%, transparent 80%)`,
+              filter: 'blur(4px)'
+            }}
+          />
+        ) : isLiquid ? (
+          <div 
+            className="absolute bottom-0 left-0 right-0 opacity-40 transition-all duration-700"
+            style={{ 
+              height: '65%',
+              backgroundColor: color,
+              borderRadius: '40% 40% 0 0 / 15% 15% 0 0'
+            }}
+          />
+        ) : isSolid ? (
+          <div 
+            className="absolute inset-0 opacity-30"
+            style={{ 
+              backgroundColor: color,
+              backgroundImage: `linear-gradient(135deg, rgba(255,255,255,0.1) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.1) 75%, transparent 75%, transparent)`,
+              backgroundSize: '8px 8px'
+            }}
+          />
+        ) : (
+          <div className="absolute inset-0 opacity-20 bg-gray-600" />
+        )}
+      </div>
+
+      {/* Hover Highlight Overlay */}
+      <div className={`absolute inset-0 transition-opacity rounded-md opacity-0 group-hover:opacity-20 bg-white z-0`}></div>
+
+      {(tableMode === 'atomic_radius' || tableMode === 'ionic_radius') && (tableMode === 'atomic_radius' ? e.atomic_radius : e.ionic_radius) && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none p-1">
+          <div 
+            className="rounded-full shadow-lg transition-all duration-500 relative"
+            style={{ 
+              width: `${Math.max(15, ((tableMode === 'atomic_radius' ? e.atomic_radius! : e.ionic_radius!) / 300) * 100)}%`, 
+              height: `${Math.max(15, ((tableMode === 'atomic_radius' ? e.atomic_radius! : e.ionic_radius!) / 300) * 100)}%`,
+              backgroundColor: getCategoryColor(e.category),
+              boxShadow: `inset -2px -2px 6px rgba(0,0,0,0.4), inset 2px 2px 6px rgba(255,255,255,0.3), 0 4px 10px rgba(0,0,0,0.3)`
+            }}
+          >
+            {/* Glossy highlight */}
+            <div className="absolute top-[15%] left-[15%] w-[30%] h-[30%] bg-white/40 rounded-full blur-[1px]"></div>
+          </div>
+        </div>
+      )}
+      
+      {/* Atomic Number */}
+      <span className={`text-[0.5rem] md:text-[0.6rem] absolute top-0.5 left-1 opacity-70 select-none z-10 ${(tableMode === 'atomic_radius' || tableMode === 'ionic_radius') ? 'text-white font-bold' : ''}`}>{e.number}</span>
+      
+      {/* Symbol */}
+      <span className={`font-bold text-xs md:text-sm lg:text-base select-none z-10 ${(tableMode === 'atomic_radius' || tableMode === 'ionic_radius') ? 'text-white drop-shadow-md' : phaseColor}`}>
+        {tableMode === 'ionic_radius' && e.ion_symbol ? e.ion_symbol : e.symbol}
       </span>
+      
+      {/* Name or Radius Value */}
+      <div className="flex flex-col items-center w-full z-10">
+        {(tableMode === 'atomic_radius' || tableMode === 'ionic_radius') ? (
+          <span className="text-[0.7rem] md:text-[0.8rem] lg:text-[0.9rem] text-white font-black opacity-100 drop-shadow-md select-none">
+            {getPropertyValue()}
+          </span>
+        ) : (
+          <>
+            <span className={`text-[0.5rem] opacity-70 truncate w-full text-center px-0.5 hidden sm:block select-none ${phaseColor}`}>
+              {lang === 'en' ? e.name_en : e.name_cn}
+            </span>
+            <span className="text-[0.4rem] md:text-[0.5rem] opacity-40 select-none hidden lg:block">
+              {getPropertyValue()}
+            </span>
+          </>
+        )}
+      </div>
     </button>
   );
 };
 
-const PeriodicTable: React.FC<PeriodicTableProps> = ({ onSelect, searchQuery, setSearchQuery, filteredElements, lang }) => {
+const PeriodicTable: React.FC<PeriodicTableProps> = ({ 
+  onSelect, searchQuery, setSearchQuery, filteredElements, lang, temperature, tableMode, historyYear, filters, hoveredClassification 
+}) => {
   const containerRef = useRef<HTMLDivElement>(null);
   
   // Pan and Zoom State
   const [transform, setTransform] = useState({ x: 0, y: 0, scale: 1 });
   const [isDragging, setIsDragging] = useState(false);
   const [showSearchInput, setShowSearchInput] = useState(false);
+  
+  // Hover State for Highlights
+  const [hoveredGroup, setHoveredGroup] = useState<number | null>(null);
+  const [hoveredPeriod, setHoveredPeriod] = useState<PeriodFilter | null>(null);
+  const [hoveredBlock, setHoveredBlock] = useState<string | null>(null);
+  const [hoveredElement, setHoveredElement] = useState<ElementData | null>(null);
+  const hoverTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleHover = (element: ElementData | null, group: number | null, period: PeriodFilter | null, block: string | null) => {
+    if (hoverTimeout.current) clearTimeout(hoverTimeout.current);
+    
+    // Small delay to prevent flickering when moving between elements or over gaps
+    hoverTimeout.current = setTimeout(() => {
+      setHoveredElement(element);
+      setHoveredGroup(group);
+      setHoveredPeriod(period);
+      setHoveredBlock(block);
+    }, 60); 
+  };
   
   // Refs for gesture calculations
   const gesture = useRef({
@@ -90,7 +412,7 @@ const PeriodicTable: React.FC<PeriodicTableProps> = ({ onSelect, searchQuery, se
   });
 
   useEffect(() => {
-    if (containerRef.current) {
+    if (containerRef.current && transform.scale === 1 && transform.x === 0 && transform.y === 0) {
       const containerWidth = containerRef.current.clientWidth;
       const contentWidth = 900; // Min width of table
       
@@ -213,8 +535,6 @@ const PeriodicTable: React.FC<PeriodicTableProps> = ({ onSelect, searchQuery, se
   };
 
   // Filter Elements
-  const isLanthanide = (n: number) => n >= 57 && n <= 71;
-  const isActinide = (n: number) => n >= 89 && n <= 103;
   const mainTableElements = ELEMENTS.filter(e => !isLanthanide(e.number) && !isActinide(e.number));
   const lanthanides = ELEMENTS.filter(e => isLanthanide(e.number));
   const actinides = ELEMENTS.filter(e => isActinide(e.number));
@@ -293,7 +613,7 @@ const PeriodicTable: React.FC<PeriodicTableProps> = ({ onSelect, searchQuery, se
       {/* Viewport Container */}
       <div 
         ref={containerRef}
-        className="relative w-full h-[70vh] md:h-[80vh] overflow-hidden bg-white/5 border border-white/5 rounded-xl cursor-grab active:cursor-grabbing touch-none shadow-inner"
+        className="relative w-full h-[75vh] md:h-[85vh] overflow-hidden bg-white/5 border border-white/5 rounded-xl cursor-grab active:cursor-grabbing touch-none shadow-inner"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -311,33 +631,299 @@ const PeriodicTable: React.FC<PeriodicTableProps> = ({ onSelect, searchQuery, se
           }}
         >
           <div className="min-w-[900px] flex flex-col items-center select-none pb-20">
-            {/* Main Grid: 18 Columns, 8 Rows (1 Header + 7 Periods) */}
+            {/* Main Grid: 19 Columns (1 for Period + 18 for Groups), 8 Rows (1 Header + 7 Periods) */}
             <div 
               className="grid gap-1 md:gap-2 w-full mb-4" 
-              style={{ gridTemplateColumns: 'repeat(18, minmax(0, 1fr))', gridTemplateRows: 'repeat(8, 1fr)' }}
+              style={{ gridTemplateColumns: '40px repeat(18, minmax(0, 1fr))', gridTemplateRows: 'repeat(8, 1fr)' }}
             >
+              {/* Period Labels */}
+              {[1, 2, 3, 4, 5, 6, 7].map(p => (
+                <div 
+                  key={`period-label-${p}`} 
+                  style={{ gridRow: p + 1, gridColumn: 1 }} 
+                  className="flex items-center justify-center text-white/30 text-xs font-mono cursor-help hover:text-amber-400 transition-colors"
+                  onMouseEnter={() => handleHover(null, null, p, null)}
+                  onMouseLeave={() => handleHover(null, null, null, null)}
+                >
+                  {p}
+                </div>
+              ))}
+
               {/* Group Numbers Header */}
               {groupNumbers.map(num => (
-                <div key={`group-${num}`} style={{ gridRow: 1, gridColumn: num }} className="flex items-end justify-center pb-2 text-white/30 text-xs font-mono">
+                <div 
+                  key={`group-${num}`} 
+                  style={{ gridRow: 1, gridColumn: num + 1 }} 
+                  className="flex items-end justify-center pb-2 text-white/30 text-xs font-mono cursor-help hover:text-blue-400 transition-colors"
+                  onMouseEnter={() => handleHover(null, num, null, null)}
+                  onMouseLeave={() => handleHover(null, null, null, null)}
+                >
                   {num}
                 </div>
               ))}
 
-              {mainTableElements.map(e => <Tile key={e.number} e={e} onSelect={(el, rect) => !gesture.current.hasMoved && onSelect(el, rect)} />)}
+              {mainTableElements.map(e => (
+                <Tile 
+                  key={e.number} 
+                  e={e} 
+                  onSelect={(el, rect) => !gesture.current.hasMoved && onSelect(el, rect)} 
+                  temperature={temperature}
+                  tableMode={tableMode}
+                  historyYear={historyYear}
+                  lang={lang}
+                  hoveredGroup={hoveredGroup}
+                  hoveredPeriod={hoveredPeriod}
+                  setHoveredGroup={setHoveredGroup}
+                  setHoveredPeriod={setHoveredPeriod}
+                  setHoveredElement={setHoveredElement}
+                  onHover={handleHover}
+                  filters={filters}
+                />
+              ))}
               
-              <div style={{ gridRow: 7, gridColumn: 3 }} className="border border-white/10 rounded-md flex items-center justify-center text-xs text-white/40 font-mono">57-71</div>
-              <div style={{ gridRow: 8, gridColumn: 3 }} className="border border-white/10 rounded-md flex items-center justify-center text-xs text-white/40 font-mono">89-103</div>
+              <div style={{ gridRow: 7, gridColumn: 4 }} className="border border-white/10 rounded-md flex items-center justify-center text-xs text-white/40 font-mono">57-71</div>
+              <div style={{ gridRow: 8, gridColumn: 4 }} className="border border-white/10 rounded-md flex items-center justify-center text-xs text-white/40 font-mono">89-103</div>
+
+              {/* Legend Overlay (Desktop) */}
+              <div style={{ gridRow: '2 / span 3', gridColumn: '4 / span 10' }} className="hidden lg:flex flex-col justify-center px-8 pointer-events-none">
+                <div className="bg-[#1e293b]/80 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-2xl min-h-[220px] max-h-[280px] flex flex-col justify-start pointer-events-auto overflow-y-auto custom-scrollbar">
+                  {hoveredElement ? (
+                    <div className="flex gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                      {/* Left: Symbol & Basic Info */}
+                      <div className="flex flex-col items-center justify-center bg-white/5 rounded-xl p-5 border border-white/10 min-w-[120px]">
+                        <span className="text-sm text-white/40 font-mono mb-1">#{hoveredElement.number}</span>
+                        <span className="text-5xl font-bold text-white mb-1" style={{ color: getCategoryColor(hoveredElement.category) }}>
+                          {hoveredElement.symbol}
+                        </span>
+                        <span className="text-sm font-bold text-white/90 text-center">
+                          {lang === 'en' ? hoveredElement.name_en : hoveredElement.name_cn}
+                        </span>
+                        <span className="text-xs text-white/40 mt-2 font-mono">{hoveredElement.atomic_mass.toFixed(3)}</span>
+                      </div>
+
+                      {/* Right: Property Table */}
+                      <div className="flex-1 flex flex-col justify-center gap-3">
+                        <div className="flex items-center justify-between border-b border-white/5 pb-2">
+                          <span className="text-xs uppercase tracking-wider text-white/30 flex items-center gap-1.5 font-bold">
+                            <Activity size={12} /> {lang === 'en' ? 'Category' : '类别'}
+                          </span>
+                          <span className="text-xs font-bold" style={{ color: getCategoryColor(hoveredElement.category) }}>
+                            {getCategoryName(hoveredElement.category, lang)}
+                          </span>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <span className="text-[10px] uppercase tracking-wider text-white/30 font-bold">
+                            {lang === 'en' ? 'Characteristics' : '特点'}
+                          </span>
+                          <p className="text-[11px] text-white/70 leading-relaxed">
+                            {lang === 'en' ? CATEGORY_DESCRIPTIONS[hoveredElement.category]?.en : CATEGORY_DESCRIPTIONS[hoveredElement.category]?.zh}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (hoveredGroup || hoveredPeriod || hoveredBlock || hoveredClassification || filters.group || filters.period || filters.block || filters.classification) ? (
+                    <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div 
+                          className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg"
+                          style={{ 
+                            backgroundColor: hoveredGroup ? '#3b82f6' : 
+                                            hoveredPeriod ? '#f59e0b' :
+                                            hoveredBlock ? '#8b5cf6' :
+                                            hoveredClassification ? (hoveredClassification === 'metal' ? '#3b82f6' : hoveredClassification === 'non-metal' ? '#10b981' : '#f59e0b') :
+                                            filters.group ? '#3b82f6' :
+                                            filters.period ? '#f59e0b' :
+                                            filters.block ? '#8b5cf6' :
+                                            filters.classification === 'metal' ? '#3b82f6' :
+                                            filters.classification === 'non-metal' ? '#10b981' : '#f59e0b'
+                          }}
+                        >
+                          <Info size={20} className="text-white" />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-bold tracking-wider uppercase">
+                            {hoveredGroup ? (lang === 'en' ? `Group ${hoveredGroup}` : `第 ${hoveredGroup} 族`) :
+                             hoveredPeriod ? (lang === 'en' ? (typeof hoveredPeriod === 'number' ? `Period ${hoveredPeriod}` : hoveredPeriod.charAt(0).toUpperCase() + hoveredPeriod.slice(1)) : (typeof hoveredPeriod === 'number' ? `第 ${hoveredPeriod} 周期` : hoveredPeriod === 'lanthanide' ? '镧系元素' : '锕系元素')) :
+                             hoveredBlock ? (lang === 'en' ? `${hoveredBlock.toUpperCase()} Block` : `${hoveredBlock.toUpperCase()} 区`) :
+                             hoveredClassification ? (hoveredClassification === 'metal' ? (lang === 'en' ? 'Metals' : '金属') : hoveredClassification === 'non-metal' ? (lang === 'en' ? 'Non-metals' : '非金属') : (lang === 'en' ? 'Metalloids' : '半金属')) :
+                             filters.group ? (lang === 'en' ? `Group ${filters.group}` : `第 ${filters.group} 族`) :
+                             filters.period ? (lang === 'en' ? (typeof filters.period === 'number' ? `Period ${filters.period}` : filters.period.charAt(0).toUpperCase() + filters.period.slice(1)) : (typeof filters.period === 'number' ? `第 ${filters.period} 周期` : filters.period === 'lanthanide' ? '镧系元素' : '锕系元素')) :
+                             filters.block ? (lang === 'en' ? `${filters.block.toUpperCase()} Block` : `${filters.block.toUpperCase()} 区`) :
+                             filters.classification === 'metal' ? (lang === 'en' ? 'Metals' : '金属') :
+                             filters.classification === 'non-metal' ? (lang === 'en' ? 'Non-metals' : '非金属') :
+                             (lang === 'en' ? 'Metalloids' : '半金属')}
+                          </h3>
+                          <span className="text-[10px] text-white/40 font-bold uppercase tracking-widest">
+                            {lang === 'en' ? 'Overview' : '概览'}
+                          </span>
+                        </div>
+                      </div>
+                      <p className="text-sm text-white/90 leading-relaxed font-medium">
+                        {hoveredGroup ? (lang === 'en' ? GROUP_DESCRIPTIONS[hoveredGroup]?.en : GROUP_DESCRIPTIONS[hoveredGroup]?.zh) :
+                         hoveredPeriod ? (lang === 'en' ? PERIOD_DESCRIPTIONS[hoveredPeriod]?.en : PERIOD_DESCRIPTIONS[hoveredPeriod]?.zh) :
+                         hoveredBlock ? (lang === 'en' ? BLOCK_DESCRIPTIONS[hoveredBlock]?.en : BLOCK_DESCRIPTIONS[hoveredBlock]?.zh) :
+                         hoveredClassification ? (lang === 'en' ? CLASSIFICATION_DESCRIPTIONS[hoveredClassification]?.en : CLASSIFICATION_DESCRIPTIONS[hoveredClassification]?.zh) :
+                         filters.group ? (lang === 'en' ? GROUP_DESCRIPTIONS[filters.group]?.en : GROUP_DESCRIPTIONS[filters.group]?.zh) :
+                         filters.period ? (lang === 'en' ? PERIOD_DESCRIPTIONS[filters.period]?.en : PERIOD_DESCRIPTIONS[filters.period]?.zh) :
+                         filters.block ? (lang === 'en' ? BLOCK_DESCRIPTIONS[filters.block]?.en : BLOCK_DESCRIPTIONS[filters.block]?.zh) :
+                         filters.classification ? (lang === 'en' ? CLASSIFICATION_DESCRIPTIONS[filters.classification]?.en : CLASSIFICATION_DESCRIPTIONS[filters.classification]?.zh) :
+                         null
+                        }
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-2 mb-4">
+                        <Info size={20} className="text-emerald-400" />
+                        <h3 className="text-lg font-bold tracking-wider uppercase opacity-80">
+                          {tableMode === 'standard' ? (lang === 'en' ? 'Phase Legend' : '物相图例') : (lang === 'en' ? 'Property Scale' : '数值刻度')}
+                        </h3>
+                      </div>
+                      
+                      {tableMode === 'standard' ? (
+                        <div className="grid grid-cols-2 gap-x-12 gap-y-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-6 h-6 rounded-sm bg-white/20 border border-white/20 relative overflow-hidden">
+                              <div className="absolute inset-0" style={{ backgroundImage: 'linear-gradient(135deg, rgba(255,255,255,0.1) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.1) 75%, transparent 75%, transparent)', backgroundSize: '4px 4px' }}></div>
+                            </div>
+                            <span className="text-sm opacity-80 uppercase tracking-widest font-medium">{lang === 'en' ? 'Solid' : '固体'}</span>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <div className="w-6 h-6 rounded-sm bg-blue-400/10 border border-white/20 relative overflow-hidden">
+                              <div className="absolute bottom-0 left-0 right-0 h-[60%] bg-blue-400/40" style={{ borderRadius: '40% 40% 0 0 / 20% 20% 0 0' }}></div>
+                            </div>
+                            <span className="text-sm opacity-80 uppercase tracking-widest font-medium">{lang === 'en' ? 'Liquid' : '液体'}</span>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <div className="w-6 h-6 rounded-sm bg-red-400/5 border border-white/20 relative overflow-hidden">
+                              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(248,113,113,0.4)_0%,transparent_80%)] blur-[1px]"></div>
+                            </div>
+                            <span className="text-sm opacity-80 uppercase tracking-widest font-medium">{lang === 'en' ? 'Gas' : '气体'}</span>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <div className="w-6 h-6 rounded-sm bg-gray-600/20 border border-white/20"></div>
+                            <span className="text-sm opacity-80 uppercase tracking-widest font-medium">{lang === 'en' ? 'Unknown' : '未知'}</span>
+                          </div>
+                        </div>
+                      ) : (tableMode === 'atomic_radius' || tableMode === 'ionic_radius') ? (
+                        <div className="flex flex-col gap-4">
+                          <div className="flex items-end gap-4 justify-center py-2">
+                            <div className="flex flex-col items-center gap-2">
+                              <div className={`w-3 h-3 rounded-full ${tableMode === 'atomic_radius' ? 'bg-blue-400' : 'bg-emerald-400'} shadow-lg`}></div>
+                              <span className="text-[10px] opacity-40 font-mono">30pm</span>
+                            </div>
+                            <div className="flex flex-col items-center gap-2">
+                              <div className={`w-6 h-6 rounded-full ${tableMode === 'atomic_radius' ? 'bg-blue-500' : 'bg-emerald-500'} shadow-lg`}></div>
+                              <span className="text-[10px] opacity-40 font-mono">150pm</span>
+                            </div>
+                            <div className="flex flex-col items-center gap-2">
+                              <div className={`w-10 h-10 rounded-full ${tableMode === 'atomic_radius' ? 'bg-blue-600' : 'bg-emerald-600'} shadow-lg`}></div>
+                              <span className="text-[10px] opacity-40 font-mono">300pm</span>
+                            </div>
+                          </div>
+                          <p className="text-[10px] text-center opacity-40 uppercase tracking-widest">
+                            {lang === 'en' 
+                              ? `Sphere size represents ${tableMode === 'atomic_radius' ? 'atomic' : 'ionic'} radius` 
+                              : `球体大小代表${tableMode === 'atomic_radius' ? '原子' : '离子'}半径`}
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col gap-3">
+                          <div className="h-3 w-full rounded-full bg-gradient-to-r from-[#1e293b] to-emerald-400" style={{
+                            backgroundImage: `linear-gradient(to right, #1e293b, ${
+                              tableMode === 'electronegativity' ? '#f43f5e' :
+                              tableMode === 'melting_point' ? '#f59e0b' :
+                              tableMode === 'boiling_point' ? '#ef4444' :
+                              tableMode === 'density' ? '#8b5cf6' :
+                              tableMode === 'ionization_energy' ? '#06b6d4' :
+                              tableMode === 'electron_affinity' ? '#f97316' : '#10b981'
+                            })`
+                          }}></div>
+                          <div className="flex justify-between text-xs opacity-60 font-mono font-bold">
+                            <span>MIN</span>
+                            <span>MAX</span>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="mt-6 pt-6 border-t border-white/5">
+                        <div className="mb-4">
+                          <h4 className="text-xs font-bold text-white/50 uppercase tracking-widest mb-2">
+                            {lang === 'en' ? 'Mode Definition' : '模式定义'}
+                          </h4>
+                          <p className="text-sm text-white/90 leading-relaxed font-medium">
+                            {lang === 'en' ? MODE_DESCRIPTIONS[tableMode].en : MODE_DESCRIPTIONS[tableMode].zh}
+                          </p>
+                        </div>
+                        <p className="text-xs text-white/40 italic leading-relaxed">
+                          {lang === 'en' 
+                            ? 'Hover over an element to highlight its group and period. Use sliders to explore history and temperature.' 
+                            : '将鼠标悬停在元素上以突出显示其族和周期。使用滑块探索历史和温度。'}
+                        </p>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
             </div>
 
             {/* F-Block */}
             <div className="min-w-[900px] mt-6 flex flex-col gap-2 w-full">
-              <div className="grid gap-1 md:gap-2" style={{ gridTemplateColumns: 'repeat(18, minmax(0, 1fr))' }}>
-                  <div className="col-span-2 flex items-center justify-end pr-4 text-xs text-white/30 font-mono tracking-wider">Lanthanides</div>
-                  {lanthanides.map(e => <Tile key={e.number} e={e} onSelect={(el, rect) => !gesture.current.hasMoved && onSelect(el, rect)} isFBlock />)}
+              <div className="grid gap-1 md:gap-2" style={{ gridTemplateColumns: '40px repeat(18, minmax(0, 1fr))' }}>
+                  <div 
+                    className="col-span-3 flex items-center justify-end pr-4 text-xs text-white/30 font-mono tracking-wider cursor-help hover:text-teal-400 transition-colors"
+                    onMouseEnter={() => handleHover(null, null, 'lanthanide', null)}
+                    onMouseLeave={() => handleHover(null, null, null, null)}
+                  >
+                    {lang === 'en' ? 'Lanthanides' : '镧系元素'}
+                  </div>
+                  {lanthanides.map(e => (
+                    <Tile 
+                      key={e.number} 
+                      e={e} 
+                      onSelect={(el, rect) => !gesture.current.hasMoved && onSelect(el, rect)} 
+                      isFBlock 
+                      temperature={temperature}
+                      tableMode={tableMode}
+                      historyYear={historyYear}
+                      lang={lang}
+                      hoveredGroup={hoveredGroup}
+                      hoveredPeriod={hoveredPeriod}
+                      setHoveredGroup={setHoveredGroup}
+                      setHoveredPeriod={setHoveredPeriod}
+                      setHoveredElement={setHoveredElement}
+                      onHover={handleHover}
+                      filters={filters}
+                    />
+                  ))}
               </div>
-              <div className="grid gap-1 md:gap-2" style={{ gridTemplateColumns: 'repeat(18, minmax(0, 1fr))' }}>
-                  <div className="col-span-2 flex items-center justify-end pr-4 text-xs text-white/30 font-mono tracking-wider">Actinides</div>
-                  {actinides.map(e => <Tile key={e.number} e={e} onSelect={(el, rect) => !gesture.current.hasMoved && onSelect(el, rect)} isFBlock />)}
+              <div className="grid gap-1 md:gap-2" style={{ gridTemplateColumns: '40px repeat(18, minmax(0, 1fr))' }}>
+                  <div 
+                    className="col-span-3 flex items-center justify-end pr-4 text-xs text-white/30 font-mono tracking-wider cursor-help hover:text-rose-400 transition-colors"
+                    onMouseEnter={() => handleHover(null, null, 'actinide', null)}
+                    onMouseLeave={() => handleHover(null, null, null, null)}
+                  >
+                    {lang === 'en' ? 'Actinides' : '锕系元素'}
+                  </div>
+                  {actinides.map(e => (
+                    <Tile 
+                      key={e.number} 
+                      e={e} 
+                      onSelect={(el, rect) => !gesture.current.hasMoved && onSelect(el, rect)} 
+                      isFBlock 
+                      temperature={temperature}
+                      tableMode={tableMode}
+                      historyYear={historyYear}
+                      lang={lang}
+                      hoveredGroup={hoveredGroup}
+                      hoveredPeriod={hoveredPeriod}
+                      setHoveredGroup={setHoveredGroup}
+                      setHoveredPeriod={setHoveredPeriod}
+                      setHoveredElement={setHoveredElement}
+                      onHover={handleHover}
+                      filters={filters}
+                    />
+                  ))}
               </div>
             </div>
           </div>

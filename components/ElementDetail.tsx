@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { X, Layers, Activity, BookOpen, AlertTriangle, Atom, Zap, Scale, Thermometer, Battery, FlaskConical, Flame, Box } from 'lucide-react';
 import { ElementData, Language, VisualMode } from '../types';
-import { getCategoryColor, getCategoryGlow } from '../utils/colors';
+import { getCategoryColor, getCategoryGlow, getCategoryName } from '../utils/colors';
 import { AtomVisualizer } from './Atom3D';
 import { DensityChart } from './PropertyCharts';
 
@@ -11,9 +11,10 @@ interface DetailProps {
   lang: Language;
   isClosing: boolean;
   originRect: DOMRect | null;
+  temperature: number;
 }
 
-const ElementDetail: React.FC<DetailProps> = ({ element, onClose, lang, isClosing, originRect }) => {
+const ElementDetail: React.FC<DetailProps> = ({ element, onClose, lang, isClosing, originRect, temperature }) => {
   const [visualMode, setVisualMode] = useState<VisualMode>('bohr');
   
   // Calculate transform-origin dynamically
@@ -125,12 +126,30 @@ const ElementDetail: React.FC<DetailProps> = ({ element, onClose, lang, isClosin
                  {lang === 'zh' && <span className="text-sm text-white/50">{element.pinyin}</span>}
               </div>
             </div>
-            <div className="flex gap-3 text-sm font-mono text-white/60">
+            <div className="flex gap-3 text-sm font-mono text-white/60 items-center">
               <span className="px-2 py-0.5 border border-white/20 rounded">No. {element.number}</span>
               <span className="px-2 py-0.5 border border-white/20 rounded">{element.atomic_mass.toFixed(3)} u</span>
               <span className="px-2 py-0.5 rounded text-black font-bold" style={{ backgroundColor: color }}>
-                {element.category.replace(/-/g, ' ')}
+                {getCategoryName(element.category, lang)}
               </span>
+              
+              {/* Phase at Current Temp */}
+              <div className="flex items-center gap-1.5 ml-2 px-2 py-0.5 bg-white/5 rounded border border-white/10">
+                <Thermometer size={12} className="text-rose-400" />
+                <span className="text-[10px] uppercase tracking-wider">
+                  {temperature}K: 
+                  <span className={`ml-1 font-bold ${
+                    (element.boiling_point && temperature >= element.boiling_point) ? 'text-red-400' : 
+                    (element.melting_point && element.boiling_point && temperature >= element.melting_point && temperature < element.boiling_point) ? 'text-blue-400' : 
+                    'text-white'
+                  }`}>
+                    { (element.boiling_point && temperature >= element.boiling_point) ? (lang === 'en' ? 'Gas' : '气体') : 
+                      (element.melting_point && element.boiling_point && temperature >= element.melting_point && temperature < element.boiling_point) ? (lang === 'en' ? 'Liquid' : '液体') : 
+                      (lang === 'en' ? 'Solid' : '固体')
+                    }
+                  </span>
+                </span>
+              </div>
             </div>
           </div>
 

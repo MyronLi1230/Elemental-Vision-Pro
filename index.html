@@ -48,6 +48,21 @@
       /* Uses dynamic transform-origin set in React */
       .anim-scale-in { animation: scaleIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
       .anim-scale-out-safe { animation: scaleOut 0.3s cubic-bezier(0.32, 0, 0.67, 0) forwards; }
+
+      /* Custom scrollbar class for specific containers */
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 4px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.2);
+      }
     </style>
   <script type="importmap">
 {
