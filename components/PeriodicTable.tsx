@@ -83,7 +83,7 @@ const MODE_DESCRIPTIONS: Record<TableMode, { en: string; zh: string }> = {
   }
 };
 
-const Tile: React.FC<TileProps> = ({ 
+const Tile = React.memo<TileProps>(({ 
   e, onSelect, isFBlock, temperature, tableMode, historyYear, lang,
   hoveredGroup, hoveredPeriod, setHoveredGroup, setHoveredPeriod, setHoveredElement,
   onHover, filters
@@ -278,14 +278,13 @@ const Tile: React.FC<TileProps> = ({
       }}
       style={style}
       className={`
-        relative w-full aspect-square flex flex-col items-center justify-center 
-        border border-white/10 rounded-md transition-all duration-300 
+        relative w-full aspect-square flex flex-col items-center justify-center p-1
+        border border-white/10 rounded-md transition-colors 
         hover:border-white/50 hover:bg-white/10
         group
-        ${isFBlock ? 'hover:scale-110 z-10' : 'hover:scale-110 hover:z-20'}
         ${isHighlighted ? 'border-white/40 bg-white/5' : ''}
         ${!isDiscovered ? 'opacity-5 grayscale pointer-events-none' : 'opacity-100'}
-        ${isFiltered ? 'opacity-10 grayscale-[0.5] scale-95' : ''}
+        ${isFiltered ? 'opacity-10 grayscale-[0.5]' : ''}
       `}
     >
       {/* Phase Background Effects */}
@@ -342,25 +341,25 @@ const Tile: React.FC<TileProps> = ({
       )}
       
       {/* Atomic Number */}
-      <span className={`text-[0.5rem] md:text-[0.6rem] absolute top-0.5 left-1 opacity-70 select-none z-10 ${(tableMode === 'atomic_radius' || tableMode === 'ionic_radius') ? 'text-white font-bold' : ''}`}>{e.number}</span>
+      <span className={`text-[0.65rem] md:text-[0.7rem] absolute top-1 left-1.5 opacity-70 select-none z-20 ${(tableMode === 'atomic_radius' || tableMode === 'ionic_radius') ? 'text-white font-bold' : ''}`}>{e.number}</span>
       
       {/* Symbol */}
-      <span className={`font-bold text-xs md:text-sm lg:text-base select-none z-10 ${(tableMode === 'atomic_radius' || tableMode === 'ionic_radius') ? 'text-white drop-shadow-md' : phaseColor}`}>
+      <span className={`font-bold select-none z-10 ${(tableMode === 'atomic_radius' || tableMode === 'ionic_radius') ? 'text-white drop-shadow-md text-sm md:text-base lg:text-lg' : `text-base md:text-lg lg:text-xl ${phaseColor}`}`}>
         {tableMode === 'ionic_radius' && e.ion_symbol ? e.ion_symbol : e.symbol}
       </span>
       
       {/* Name or Radius Value */}
-      <div className="flex flex-col items-center w-full z-10">
+      <div className="flex flex-col items-center w-full z-10 mt-1">
         {(tableMode === 'atomic_radius' || tableMode === 'ionic_radius') ? (
-          <span className="text-[0.7rem] md:text-[0.8rem] lg:text-[0.9rem] text-white font-black opacity-100 drop-shadow-md select-none">
+          <span className="text-[0.8rem] md:text-[0.9rem] lg:text-[1rem] text-white font-black opacity-100 drop-shadow-md select-none mt-1">
             {getPropertyValue()}
           </span>
         ) : (
           <>
-            <span className={`text-[0.5rem] opacity-70 truncate w-full text-center px-0.5 hidden sm:block select-none ${phaseColor}`}>
+            <span className={`text-[0.6rem] md:text-[0.65rem] font-bold opacity-90 truncate w-full text-center px-0.5 hidden sm:block select-none ${phaseColor}`}>
               {lang === 'en' ? e.name_en : e.name_cn}
             </span>
-            <span className="text-[0.4rem] md:text-[0.5rem] opacity-40 select-none hidden lg:block">
+            <span className="text-[0.5rem] md:text-[0.55rem] opacity-60 font-mono select-none hidden lg:block">
               {getPropertyValue()}
             </span>
           </>
@@ -368,7 +367,7 @@ const Tile: React.FC<TileProps> = ({
       </div>
     </button>
   );
-};
+});
 
 const PeriodicTable: React.FC<PeriodicTableProps> = ({ 
   onSelect, searchQuery, setSearchQuery, filteredElements, lang, temperature, tableMode, historyYear, filters, hoveredClassification 
@@ -387,7 +386,7 @@ const PeriodicTable: React.FC<PeriodicTableProps> = ({
   const [hoveredElement, setHoveredElement] = useState<ElementData | null>(null);
   const hoverTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const handleHover = (element: ElementData | null, group: number | null, period: PeriodFilter | null, block: string | null) => {
+  const handleHover = React.useCallback((element: ElementData | null, group: number | null, period: PeriodFilter | null, block: string | null) => {
     if (hoverTimeout.current) clearTimeout(hoverTimeout.current);
     
     // Small delay to prevent flickering when moving between elements or over gaps
@@ -397,7 +396,7 @@ const PeriodicTable: React.FC<PeriodicTableProps> = ({
       setHoveredPeriod(period);
       setHoveredBlock(block);
     }, 60); 
-  };
+  }, []);
   
   // Refs for gesture calculations
   const gesture = useRef({
@@ -414,9 +413,9 @@ const PeriodicTable: React.FC<PeriodicTableProps> = ({
   useEffect(() => {
     if (containerRef.current && transform.scale === 1 && transform.x === 0 && transform.y === 0) {
       const containerWidth = containerRef.current.clientWidth;
-      const contentWidth = 900; // Min width of table
+      const contentWidth = 1400; // Expanded to 1400 for maximum clarity
       
-      const initialScale = containerWidth < 768 ? (containerWidth / contentWidth) * 0.9 : 0.9;
+      const initialScale = containerWidth < 768 ? (containerWidth / contentWidth) * 0.95 : 0.8;
       const centeredX = (containerWidth - contentWidth * initialScale) / 2;
       const centeredY = 40; 
 
@@ -528,8 +527,8 @@ const PeriodicTable: React.FC<PeriodicTableProps> = ({
   const reset = () => {
      if (containerRef.current) {
         const containerWidth = containerRef.current.clientWidth;
-        const initialScale = containerWidth < 768 ? (containerWidth / 900) * 0.9 : 0.9;
-        const centeredX = (containerWidth - 900 * initialScale) / 2;
+        const initialScale = containerWidth < 768 ? (containerWidth / 1400) * 0.95 : 0.8;
+        const centeredX = (containerWidth - 1400 * initialScale) / 2;
         setTransform({ x: centeredX, y: 40, scale: initialScale });
      }
   };
@@ -630,11 +629,11 @@ const PeriodicTable: React.FC<PeriodicTableProps> = ({
             transition: isDragging || gesture.current.isPinching ? 'none' : 'transform 0.1s ease-out'
           }}
         >
-          <div className="min-w-[900px] flex flex-col items-center select-none pb-20">
+          <div className="min-w-[1400px] flex flex-col items-center select-none pb-24">
             {/* Main Grid: 19 Columns (1 for Period + 18 for Groups), 8 Rows (1 Header + 7 Periods) */}
             <div 
-              className="grid gap-1 md:gap-2 w-full mb-4" 
-              style={{ gridTemplateColumns: '40px repeat(18, minmax(0, 1fr))', gridTemplateRows: 'repeat(8, 1fr)' }}
+              className="grid gap-3 md:gap-4 w-full mb-6 relative" 
+              style={{ gridTemplateColumns: '60px repeat(18, minmax(0, 1fr))', gridTemplateRows: 'repeat(8, 1fr)' }}
             >
               {/* Period Labels */}
               {[1, 2, 3, 4, 5, 6, 7].map(p => (
@@ -684,64 +683,79 @@ const PeriodicTable: React.FC<PeriodicTableProps> = ({
               <div style={{ gridRow: 7, gridColumn: 4 }} className="border border-white/10 rounded-md flex items-center justify-center text-xs text-white/40 font-mono">57-71</div>
               <div style={{ gridRow: 8, gridColumn: 4 }} className="border border-white/10 rounded-md flex items-center justify-center text-xs text-white/40 font-mono">89-103</div>
 
-              {/* Legend Overlay (Desktop) */}
-              <div style={{ gridRow: '2 / span 3', gridColumn: '4 / span 10' }} className="hidden lg:flex flex-col justify-center px-8 pointer-events-none">
-                <div className="bg-[#1e293b]/80 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-2xl min-h-[220px] max-h-[280px] flex flex-col justify-start pointer-events-auto overflow-y-auto custom-scrollbar">
+              {/* Fixed Legend Information Box (Desktop) */}
+              <div 
+                style={{ 
+                  gridRow: '2 / 5',  
+                  gridColumn: '4 / 14', 
+                  zIndex: 30
+                }} 
+                className="hidden lg:flex absolute inset-0 flex-col pointer-events-none"
+              >
+                <div 
+                  className="bg-[#1e293b]/95 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-2xl flex flex-col pointer-events-auto w-full h-full overflow-hidden"
+                >
                   {hoveredElement ? (
-                    <div className="flex gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                      {/* Left: Symbol & Basic Info */}
-                      <div className="flex flex-col items-center justify-center bg-white/5 rounded-xl p-5 border border-white/10 min-w-[120px]">
-                        <span className="text-sm text-white/40 font-mono mb-1">#{hoveredElement.number}</span>
-                        <span className="text-5xl font-bold text-white mb-1" style={{ color: getCategoryColor(hoveredElement.category) }}>
-                          {hoveredElement.symbol}
-                        </span>
-                        <span className="text-sm font-bold text-white/90 text-center">
-                          {lang === 'en' ? hoveredElement.name_en : hoveredElement.name_cn}
-                        </span>
-                        <span className="text-xs text-white/40 mt-2 font-mono">{hoveredElement.atomic_mass.toFixed(3)}</span>
-                      </div>
-
-                      {/* Right: Property Table */}
-                      <div className="flex-1 flex flex-col justify-center gap-3">
-                        <div className="flex items-center justify-between border-b border-white/5 pb-2">
-                          <span className="text-xs uppercase tracking-wider text-white/30 flex items-center gap-1.5 font-bold">
-                            <Activity size={12} /> {lang === 'en' ? 'Category' : '类别'}
+                    <div className="flex flex-col h-full animate-in fade-in slide-in-from-bottom-2 duration-300">
+                      <div className="flex gap-8 items-start h-full">
+                        {/* Left: Symbol & Basic Info */}
+                        <div className="flex flex-col items-center justify-center bg-white/5 rounded-2xl p-6 border border-white/10 min-w-[180px] h-full">
+                          <span className="text-xs text-white/40 font-mono mb-2">#{hoveredElement.number}</span>
+                          <span className="text-7xl font-bold text-white mb-2 drop-shadow-lg" style={{ color: getCategoryColor(hoveredElement.category) }}>
+                            {hoveredElement.symbol}
                           </span>
-                          <span className="text-xs font-bold" style={{ color: getCategoryColor(hoveredElement.category) }}>
-                            {getCategoryName(hoveredElement.category, lang)}
+                          <span className="text-xl font-bold text-white/90 text-center leading-tight">
+                            {lang === 'en' ? hoveredElement.name_en : hoveredElement.name_cn}
                           </span>
+                          <span className="text-xs text-white/40 mt-3 font-mono">{hoveredElement.atomic_mass.toFixed(4)}</span>
                         </div>
-                        <div className="flex flex-col gap-1">
-                          <span className="text-[10px] uppercase tracking-wider text-white/30 font-bold">
-                            {lang === 'en' ? 'Characteristics' : '特点'}
-                          </span>
-                          <p className="text-[11px] text-white/70 leading-relaxed">
-                            {lang === 'en' ? CATEGORY_DESCRIPTIONS[hoveredElement.category]?.en : CATEGORY_DESCRIPTIONS[hoveredElement.category]?.zh}
-                          </p>
+  
+                        {/* Right: Property Grid */}
+                        <div className="flex-1 grid grid-cols-2 gap-x-12 gap-y-6 py-4 h-full content-center">
+                          <div className="flex flex-col border-b border-white/5 pb-2">
+                            <span className="text-xs uppercase tracking-wider text-white/30 font-bold">{lang === 'en' ? 'Phase' : '物相'}</span>
+                            <span className="text-base font-bold text-white/90">{hoveredElement.phase}</span>
+                          </div>
+                          <div className="flex flex-col border-b border-white/5 pb-2">
+                            <span className="text-xs uppercase tracking-wider text-white/30 font-bold">{lang === 'en' ? 'Electronegativity' : '电负性'}</span>
+                            <span className="text-base font-bold text-white/90">{hoveredElement.electronegativity || '-'}</span>
+                          </div>
+                          <div className="flex flex-col border-b border-white/5 pb-2">
+                            <span className="text-xs uppercase tracking-wider text-white/30 font-bold">{lang === 'en' ? 'Melt (K)' : '熔点(K)'}</span>
+                            <span className="text-base font-bold text-white/90">{hoveredElement.melting_point || '-'}</span>
+                          </div>
+                          <div className="flex flex-col border-b border-white/5 pb-2">
+                            <span className="text-xs uppercase tracking-wider text-white/30 font-bold">{lang === 'en' ? 'Boil (K)' : '沸点(K)'}</span>
+                            <span className="text-base font-bold text-white/90">{hoveredElement.boiling_point || '-'}</span>
+                          </div>
+                          <div className="flex flex-col border-b border-white/5 pb-2">
+                            <span className="text-xs uppercase tracking-wider text-white/30 font-bold">{lang === 'en' ? 'Electron Conf.' : '电子排布'}</span>
+                            <span className="text-sm font-mono text-white/90 truncate">{hoveredElement.electron_configuration}</span>
+                          </div>
+                          <div className="flex flex-col border-b border-white/5 pb-2">
+                            <span className="text-xs uppercase tracking-wider text-white/30 font-bold">{lang === 'en' ? 'Density' : '密度'}</span>
+                            <span className="text-base font-bold text-white/90">{hoveredElement.density || '-'}</span>
+                          </div>
                         </div>
                       </div>
                     </div>
                   ) : (hoveredGroup || hoveredPeriod || hoveredBlock || hoveredClassification || filters.group || filters.period || filters.block || filters.classification) ? (
-                    <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-                      <div className="flex items-center gap-3 mb-3">
+                    <div className="flex flex-col h-full animate-in fade-in slide-in-from-bottom-2 duration-300 justify-center">
+                      <div className="flex items-center gap-6 mb-4">
                         <div 
-                          className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg"
+                          className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-xl"
                           style={{ 
-                            backgroundColor: hoveredGroup ? '#3b82f6' : 
-                                            hoveredPeriod ? '#f59e0b' :
-                                            hoveredBlock ? '#8b5cf6' :
-                                            hoveredClassification ? (hoveredClassification === 'metal' ? '#3b82f6' : hoveredClassification === 'non-metal' ? '#10b981' : '#f59e0b') :
-                                            filters.group ? '#3b82f6' :
-                                            filters.period ? '#f59e0b' :
-                                            filters.block ? '#8b5cf6' :
-                                            filters.classification === 'metal' ? '#3b82f6' :
-                                            filters.classification === 'non-metal' ? '#10b981' : '#f59e0b'
+                            backgroundColor: (hoveredGroup || filters.group) ? '#3b82f6' : 
+                                            (hoveredPeriod || filters.period) ? '#f59e0b' :
+                                            (hoveredBlock || filters.block) ? '#8b5cf6' :
+                                            (hoveredClassification || filters.classification) === 'metal' ? '#3b82f6' : 
+                                            (hoveredClassification || filters.classification) === 'non-metal' ? '#10b981' : '#f59e0b'
                           }}
                         >
-                          <Info size={20} className="text-white" />
+                          <Info size={32} className="text-white" />
                         </div>
                         <div>
-                          <h3 className="text-lg font-bold tracking-wider uppercase">
+                          <h3 className="text-2xl font-bold tracking-wider uppercase">
                             {hoveredGroup ? (lang === 'en' ? `Group ${hoveredGroup}` : `第 ${hoveredGroup} 族`) :
                              hoveredPeriod ? (lang === 'en' ? (typeof hoveredPeriod === 'number' ? `Period ${hoveredPeriod}` : hoveredPeriod.charAt(0).toUpperCase() + hoveredPeriod.slice(1)) : (typeof hoveredPeriod === 'number' ? `第 ${hoveredPeriod} 周期` : hoveredPeriod === 'lanthanide' ? '镧系元素' : '锕系元素')) :
                              hoveredBlock ? (lang === 'en' ? `${hoveredBlock.toUpperCase()} Block` : `${hoveredBlock.toUpperCase()} 区`) :
@@ -753,18 +767,18 @@ const PeriodicTable: React.FC<PeriodicTableProps> = ({
                              filters.classification === 'non-metal' ? (lang === 'en' ? 'Non-metals' : '非金属') :
                              (lang === 'en' ? 'Metalloids' : '半金属')}
                           </h3>
-                          <span className="text-[10px] text-white/40 font-bold uppercase tracking-widest">
+                          <span className="text-xs text-white/40 font-bold uppercase tracking-widest">
                             {lang === 'en' ? 'Overview' : '概览'}
                           </span>
                         </div>
                       </div>
-                      <p className="text-sm text-white/90 leading-relaxed font-medium">
+                      <p className="text-base text-white/90 leading-relaxed font-medium">
                         {hoveredGroup ? (lang === 'en' ? GROUP_DESCRIPTIONS[hoveredGroup]?.en : GROUP_DESCRIPTIONS[hoveredGroup]?.zh) :
                          hoveredPeriod ? (lang === 'en' ? PERIOD_DESCRIPTIONS[hoveredPeriod]?.en : PERIOD_DESCRIPTIONS[hoveredPeriod]?.zh) :
                          hoveredBlock ? (lang === 'en' ? BLOCK_DESCRIPTIONS[hoveredBlock]?.en : BLOCK_DESCRIPTIONS[hoveredBlock]?.zh) :
                          hoveredClassification ? (lang === 'en' ? CLASSIFICATION_DESCRIPTIONS[hoveredClassification]?.en : CLASSIFICATION_DESCRIPTIONS[hoveredClassification]?.zh) :
                          filters.group ? (lang === 'en' ? GROUP_DESCRIPTIONS[filters.group]?.en : GROUP_DESCRIPTIONS[filters.group]?.zh) :
-                         filters.period ? (lang === 'en' ? PERIOD_DESCRIPTIONS[filters.period]?.en : PERIOD_DESCRIPTIONS[filters.period]?.zh) :
+                         filters.period ? (lang === 'en' ? PERIOD_DESCRIPTIONS[filters.period]?.en : (typeof filters.period === 'number' ? `第 ${filters.period} 周期` : filters.period === 'lanthanide' ? '镧系元素' : '锕系元素')) :
                          filters.block ? (lang === 'en' ? BLOCK_DESCRIPTIONS[filters.block]?.en : BLOCK_DESCRIPTIONS[filters.block]?.zh) :
                          filters.classification ? (lang === 'en' ? CLASSIFICATION_DESCRIPTIONS[filters.classification]?.en : CLASSIFICATION_DESCRIPTIONS[filters.classification]?.zh) :
                          null
@@ -772,9 +786,9 @@ const PeriodicTable: React.FC<PeriodicTableProps> = ({
                       </p>
                     </div>
                   ) : (
-                    <>
-                      <div className="flex items-center gap-2 mb-4">
-                        <Info size={20} className="text-emerald-400" />
+                    <div className="flex flex-col h-full justify-between py-2">
+                      <div className="flex items-center gap-3 mb-2">
+                        <Info size={24} className="text-emerald-400" />
                         <h3 className="text-lg font-bold tracking-wider uppercase opacity-80">
                           {tableMode === 'standard' ? (lang === 'en' ? 'Phase Legend' : '物相图例') : (lang === 'en' ? 'Property Scale' : '数值刻度')}
                         </h3>
@@ -782,54 +796,54 @@ const PeriodicTable: React.FC<PeriodicTableProps> = ({
                       
                       {tableMode === 'standard' ? (
                         <div className="grid grid-cols-2 gap-x-12 gap-y-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-6 h-6 rounded-sm bg-white/20 border border-white/20 relative overflow-hidden">
-                              <div className="absolute inset-0" style={{ backgroundImage: 'linear-gradient(135deg, rgba(255,255,255,0.1) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.1) 75%, transparent 75%, transparent)', backgroundSize: '4px 4px' }}></div>
+                          <div className="flex items-center gap-4">
+                            <div className="w-8 h-8 rounded-md bg-white/20 border border-white/20 relative overflow-hidden">
+                              <div className="absolute inset-0" style={{ backgroundImage: 'linear-gradient(135deg, rgba(255,255,255,0.1) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.1) 75%, transparent 75%, transparent)', backgroundSize: '6px 6px' }}></div>
                             </div>
-                            <span className="text-sm opacity-80 uppercase tracking-widest font-medium">{lang === 'en' ? 'Solid' : '固体'}</span>
+                            <span className="text-sm opacity-80 uppercase tracking-widest font-bold">{lang === 'en' ? 'Solid' : '固体'}</span>
                           </div>
-                          <div className="flex items-center gap-3">
-                            <div className="w-6 h-6 rounded-sm bg-blue-400/10 border border-white/20 relative overflow-hidden">
+                          <div className="flex items-center gap-4">
+                            <div className="w-8 h-8 rounded-md bg-blue-400/10 border border-white/20 relative overflow-hidden">
                               <div className="absolute bottom-0 left-0 right-0 h-[60%] bg-blue-400/40" style={{ borderRadius: '40% 40% 0 0 / 20% 20% 0 0' }}></div>
                             </div>
-                            <span className="text-sm opacity-80 uppercase tracking-widest font-medium">{lang === 'en' ? 'Liquid' : '液体'}</span>
+                            <span className="text-sm opacity-80 uppercase tracking-widest font-bold">{lang === 'en' ? 'Liquid' : '液体'}</span>
                           </div>
-                          <div className="flex items-center gap-3">
-                            <div className="w-6 h-6 rounded-sm bg-red-400/5 border border-white/20 relative overflow-hidden">
-                              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(248,113,113,0.4)_0%,transparent_80%)] blur-[1px]"></div>
+                          <div className="flex items-center gap-4">
+                            <div className="w-8 h-8 rounded-md bg-red-400/5 border border-white/20 relative overflow-hidden">
+                              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(248,113,113,0.4)_0%,transparent_80%)] blur-[2px]"></div>
                             </div>
-                            <span className="text-sm opacity-80 uppercase tracking-widest font-medium">{lang === 'en' ? 'Gas' : '气体'}</span>
+                            <span className="text-sm opacity-80 uppercase tracking-widest font-bold">{lang === 'en' ? 'Gas' : '气体'}</span>
                           </div>
-                          <div className="flex items-center gap-3">
-                            <div className="w-6 h-6 rounded-sm bg-gray-600/20 border border-white/20"></div>
-                            <span className="text-sm opacity-80 uppercase tracking-widest font-medium">{lang === 'en' ? 'Unknown' : '未知'}</span>
+                          <div className="flex items-center gap-4">
+                            <div className="w-8 h-8 rounded-md bg-gray-600/20 border border-white/20"></div>
+                            <span className="text-sm opacity-80 uppercase tracking-widest font-bold">{lang === 'en' ? 'Unknown' : '未知'}</span>
                           </div>
                         </div>
                       ) : (tableMode === 'atomic_radius' || tableMode === 'ionic_radius') ? (
                         <div className="flex flex-col gap-4">
-                          <div className="flex items-end gap-4 justify-center py-2">
-                            <div className="flex flex-col items-center gap-2">
-                              <div className={`w-3 h-3 rounded-full ${tableMode === 'atomic_radius' ? 'bg-blue-400' : 'bg-emerald-400'} shadow-lg`}></div>
-                              <span className="text-[10px] opacity-40 font-mono">30pm</span>
+                          <div className="flex items-end gap-6 justify-center py-2">
+                            <div className="flex flex-col items-center gap-3">
+                              <div className={`w-4 h-4 rounded-full ${tableMode === 'atomic_radius' ? 'bg-blue-400' : 'bg-emerald-400'} shadow-lg`}></div>
+                              <span className="text-xs opacity-40 font-mono font-bold">30pm</span>
                             </div>
-                            <div className="flex flex-col items-center gap-2">
-                              <div className={`w-6 h-6 rounded-full ${tableMode === 'atomic_radius' ? 'bg-blue-500' : 'bg-emerald-500'} shadow-lg`}></div>
-                              <span className="text-[10px] opacity-40 font-mono">150pm</span>
+                            <div className="flex flex-col items-center gap-3">
+                              <div className={`w-10 h-10 rounded-full ${tableMode === 'atomic_radius' ? 'bg-blue-500' : 'bg-emerald-500'} shadow-lg`}></div>
+                              <span className="text-xs opacity-40 font-mono font-bold">150pm</span>
                             </div>
-                            <div className="flex flex-col items-center gap-2">
-                              <div className={`w-10 h-10 rounded-full ${tableMode === 'atomic_radius' ? 'bg-blue-600' : 'bg-emerald-600'} shadow-lg`}></div>
-                              <span className="text-[10px] opacity-40 font-mono">300pm</span>
+                            <div className="flex flex-col items-center gap-3">
+                              <div className={`w-16 h-16 rounded-full ${tableMode === 'atomic_radius' ? 'bg-blue-600' : 'bg-emerald-600'} shadow-lg`}></div>
+                              <span className="text-xs opacity-40 font-mono font-bold">300pm</span>
                             </div>
                           </div>
-                          <p className="text-[10px] text-center opacity-40 uppercase tracking-widest">
+                          <p className="text-xs text-center opacity-40 uppercase tracking-widest font-bold">
                             {lang === 'en' 
                               ? `Sphere size represents ${tableMode === 'atomic_radius' ? 'atomic' : 'ionic'} radius` 
                               : `球体大小代表${tableMode === 'atomic_radius' ? '原子' : '离子'}半径`}
                           </p>
                         </div>
                       ) : (
-                        <div className="flex flex-col gap-3">
-                          <div className="h-3 w-full rounded-full bg-gradient-to-r from-[#1e293b] to-emerald-400" style={{
+                        <div className="flex flex-col gap-4">
+                          <div className="h-4 w-full rounded-full bg-gradient-to-r from-[#1e293b] to-emerald-400" style={{
                             backgroundImage: `linear-gradient(to right, #1e293b, ${
                               tableMode === 'electronegativity' ? '#f43f5e' :
                               tableMode === 'melting_point' ? '#f59e0b' :
@@ -839,37 +853,37 @@ const PeriodicTable: React.FC<PeriodicTableProps> = ({
                               tableMode === 'electron_affinity' ? '#f97316' : '#10b981'
                             })`
                           }}></div>
-                          <div className="flex justify-between text-xs opacity-60 font-mono font-bold">
+                          <div className="flex justify-between text-xs opacity-60 font-mono font-black tracking-widest">
                             <span>MIN</span>
                             <span>MAX</span>
                           </div>
                         </div>
                       )}
 
-                      <div className="mt-6 pt-6 border-t border-white/5">
-                        <div className="mb-4">
-                          <h4 className="text-xs font-bold text-white/50 uppercase tracking-widest mb-2">
+                      <div className="pt-6 border-t border-white/5 mt-auto">
+                        <div className="mb-3">
+                          <h4 className="text-[10px] font-bold text-white/50 uppercase tracking-widest mb-1">
                             {lang === 'en' ? 'Mode Definition' : '模式定义'}
                           </h4>
-                          <p className="text-sm text-white/90 leading-relaxed font-medium">
+                          <p className="text-xs text-white/90 leading-relaxed font-semibold">
                             {lang === 'en' ? MODE_DESCRIPTIONS[tableMode].en : MODE_DESCRIPTIONS[tableMode].zh}
                           </p>
                         </div>
-                        <p className="text-xs text-white/40 italic leading-relaxed">
+                        <p className="text-[10px] text-white/40 italic leading-relaxed">
                           {lang === 'en' 
                             ? 'Hover over an element to highlight its group and period. Use sliders to explore history and temperature.' 
                             : '将鼠标悬停在元素上以突出显示其族和周期。使用滑块探索历史和温度。'}
                         </p>
                       </div>
-                    </>
+                    </div>
                   )}
                 </div>
               </div>
             </div>
 
             {/* F-Block */}
-            <div className="min-w-[900px] mt-6 flex flex-col gap-2 w-full">
-              <div className="grid gap-1 md:gap-2" style={{ gridTemplateColumns: '40px repeat(18, minmax(0, 1fr))' }}>
+            <div className="min-w-[1400px] mt-8 flex flex-col gap-3 w-full">
+              <div className="grid gap-2 md:gap-3" style={{ gridTemplateColumns: '60px repeat(18, minmax(0, 1fr))' }}>
                   <div 
                     className="col-span-3 flex items-center justify-end pr-4 text-xs text-white/30 font-mono tracking-wider cursor-help hover:text-teal-400 transition-colors"
                     onMouseEnter={() => handleHover(null, null, 'lanthanide', null)}

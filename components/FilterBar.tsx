@@ -7,10 +7,9 @@ interface FilterBarProps {
   filters: FilterState;
   setFilters: React.Dispatch<React.SetStateAction<FilterState>>;
   lang: Language;
-  onHoverClassification?: (c: Classification | null) => void;
 }
 
-const FilterBar: React.FC<FilterBarProps> = ({ filters, setFilters, lang, onHoverClassification }) => {
+const FilterBar: React.FC<FilterBarProps> = ({ filters, setFilters, lang }) => {
   const groups = Array.from({ length: 18 }, (_, i) => i + 1);
   const periods = Array.from({ length: 7 }, (_, i) => i + 1);
   const blocks: Block[] = ['s', 'p', 'd', 'f'];
@@ -74,32 +73,6 @@ const FilterBar: React.FC<FilterBarProps> = ({ filters, setFilters, lang, onHove
 
   return (
     <div className="w-full bg-[#1e293b]/20 backdrop-blur-md border border-white/5 rounded-lg p-1.5 mb-2 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 shadow-xl">
-      {/* Classification */}
-      <div className="flex items-center gap-2">
-        <span className="text-xs uppercase tracking-wider text-white/40 font-bold">
-          {lang === 'en' ? 'Type' : '类别'}
-        </span>
-        <div className="flex gap-1">
-          {(['metal', 'non-metal', 'metalloid'] as Classification[]).map(c => (
-            <button
-              key={c}
-              onClick={() => toggleFilter('classification', c)}
-              onMouseEnter={() => onHoverClassification?.(c)}
-              onMouseLeave={() => onHoverClassification?.(null)}
-              className={`px-3 h-6 flex items-center justify-center rounded-sm text-xs font-bold transition-all border ${
-                filters.classification === c 
-                  ? 'bg-white/20 text-white border-white/50' 
-                  : 'bg-white/5 text-white/20 border-transparent hover:border-white/10'
-              }`}
-            >
-              {getClassificationLabel(c)}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="hidden sm:block w-px h-4 bg-white/10"></div>
-
       {/* Groups */}
       <div className="flex items-center gap-2">
         <span className="text-xs uppercase tracking-wider text-blue-400/60 font-bold">

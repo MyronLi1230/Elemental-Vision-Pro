@@ -35,3 +35,24 @@ export const getCategoryName = (category: ElementCategory, lang: 'en' | 'zh'): s
   };
   return names[category][lang];
 };
+
+export const getClassificationLabel = (c: 'metal' | 'non-metal' | 'metalloid', lang: 'en' | 'zh') => {
+  if (lang === 'en') {
+    return c.charAt(0).toUpperCase() + c.slice(1);
+  }
+  const labels: Record<string, string> = {
+    metal: '金属',
+    'non-metal': '非金属',
+    metalloid: '半金属'
+  };
+  return labels[c];
+};
+
+export const getClassificationColor = (c: 'metal' | 'non-metal' | 'metalloid'): string => {
+  const colors = {
+    metal: '#3b82f6', // blue-500
+    'non-metal': '#10b981', // emerald-500
+    metalloid: '#f59e0b' // amber-500
+  };
+  return colors[c];
+};

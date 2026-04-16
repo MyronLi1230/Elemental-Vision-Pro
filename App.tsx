@@ -5,6 +5,7 @@ import ElementDetail from './components/ElementDetail';
 import FilterBar from './components/FilterBar';
 import { Globe, Box, Thermometer, Palette } from 'lucide-react';
 import { ELEMENTS } from './data/elementData';
+import { getClassificationLabel, getClassificationColor } from './utils/colors';
 
 const App: React.FC = () => {
   const [selectedElement, setSelectedElement] = useState<ElementData | null>(null);
@@ -23,6 +24,27 @@ const App: React.FC = () => {
     period: null
   });
   const [hoveredClassification, setHoveredClassification] = useState<Classification | null>(null);
+
+  const toggleClassification = (c: Classification) => {
+    setFilters(prev => {
+      if (prev.classification === c) {
+        return {
+          classification: null,
+          category: null,
+          group: null,
+          block: null,
+          period: null
+        };
+      }
+      return {
+        classification: c,
+        category: null,
+        group: null,
+        block: null,
+        period: null
+      };
+    });
+  };
 
   // Search Logic
   const filteredElements = searchQuery 
@@ -72,6 +94,31 @@ const App: React.FC = () => {
 
         {/* Center: Main Controls */}
         <div className="flex-1 flex items-center justify-center gap-4">
+          {/* Classification Filters (Metal, Non-metal, Metalloid) */}
+          <div className="hidden lg:flex items-center gap-1 bg-white/5 px-2 py-1 rounded-full border border-white/10 mr-2">
+            {(['metal', 'non-metal', 'metalloid'] as Classification[]).map(c => (
+              <button
+                key={c}
+                onClick={() => toggleClassification(c)}
+                onMouseEnter={() => setHoveredClassification(c)}
+                onMouseLeave={() => setHoveredClassification(null)}
+                style={{
+                  backgroundColor: filters.classification === c ? getClassificationColor(c) : 'transparent',
+                  borderColor: getClassificationColor(c),
+                  color: filters.classification === c ? '#1e293b' : getClassificationColor(c),
+                  boxShadow: filters.classification === c ? `0 0 20px ${getClassificationColor(c)}88` : 'none'
+                }}
+                className={`px-4 py-1.5 rounded-full text-[11px] font-black transition-all border-2 ${
+                  filters.classification === c 
+                    ? 'border-white/20' 
+                    : 'bg-white/5 border-white/5 hover:bg-white/10'
+                }`}
+              >
+                {getClassificationLabel(c, lang)}
+              </button>
+            ))}
+          </div>
+
           {/* History Slider (Desktop) */}
           <div className="hidden xl:flex items-center gap-3 bg-white/5 px-3 py-1 rounded-full border border-white/10">
             <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">
@@ -150,7 +197,6 @@ const App: React.FC = () => {
             filters={filters} 
             setFilters={setFilters} 
             lang={lang} 
-            onHoverClassification={setHoveredClassification}
           />
           <div className="flex-1 min-h-0 relative">
             <PeriodicTable 
