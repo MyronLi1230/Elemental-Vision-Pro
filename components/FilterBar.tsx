@@ -72,7 +72,7 @@ const FilterBar: React.FC<FilterBarProps> = ({ filters, setFilters, lang }) => {
   };
 
   return (
-    <div className="w-full bg-[#1e293b]/20 backdrop-blur-md border border-white/5 rounded-lg p-1.5 mb-2 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 shadow-xl">
+    <div className="hidden md:flex w-full bg-[#1e293b]/20 backdrop-blur-md border border-white/5 rounded-lg p-1.5 mb-2 flex-wrap items-center justify-center gap-x-6 gap-y-2 shadow-xl">
       {/* Groups */}
       <div className="flex items-center gap-2">
         <span className="text-xs uppercase tracking-wider text-blue-400/60 font-bold">
