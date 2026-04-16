@@ -81,11 +81,8 @@ const ElementDetail: React.FC<DetailProps> = ({ element, onClose, lang, isClosin
         </button>
 
         {/* Left: 3D Visualization Area */}
-        <div className="w-full md:w-1/2 h-[40vh] md:h-full relative bg-gradient-to-b from-black/60 to-transparent">
-          {/* Absolute positioning to guarantee dimensions and correct centering */}
-          <div className="absolute inset-0 z-0">
-             <AtomVisualizer element={element} mode={visualMode} color={color} />
-          </div>
+        <div className="w-full md:w-1/2 h-[50vh] md:h-full relative overflow-hidden bg-gradient-to-b from-black/60 to-transparent flex items-center justify-center z-0">
+          <AtomVisualizer key={element.number} element={element} mode={visualMode} color={color} />
           
           {/* Mode Toggle */}
           <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 bg-black/60 p-1 rounded-full border border-white/10 backdrop-blur-md z-20">

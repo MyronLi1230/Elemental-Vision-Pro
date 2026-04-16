@@ -113,29 +113,26 @@ const ElectronCloud: React.FC<{ count: number, color: string }> = ({ count, colo
 
 const SceneContent: React.FC<AtomProps> = ({ element, mode, color }) => {
   // Make nucleus smaller in 2D view so rings are clearer
-  const nucleusSize = Math.max(0.6, Math.min(1.2, element.number * 0.04));
+  const nucleusSize = Math.max(1.0, Math.min(2.0, element.number * 0.06));
 
   return (
     <>
-      <ambientLight intensity={0.4} />
-      <pointLight position={[10, 10, 10]} intensity={1} />
+      <ambientLight intensity={0.8} />
+      <pointLight position={[10, 10, 20]} intensity={2} />
       
-      {/* No rotation group -> Flat 2D View */}
       <group>
         <Nucleus color={color} size={nucleusSize} />
 
-        {/* Electrons */}
         {mode === 'bohr' && (
           <group>
             {element.shells.map((count, shellIndex) => {
-              // Increase spacing between rings for clarity in 2D
-              const orbitRadius = nucleusSize + 2.5 + (shellIndex * 1.8);
+              const orbitRadius = nucleusSize + 1.5 + (shellIndex * 1.8);
               return (
                 <ElectronShell
                   key={shellIndex}
                   radius={orbitRadius}
                   count={count}
-                  speed={0.2 - (shellIndex * 0.02)} // Outer shells slower
+                  speed={0.1 - (shellIndex * 0.01)}
                   color={color}
                 />
               );
@@ -143,9 +140,8 @@ const SceneContent: React.FC<AtomProps> = ({ element, mode, color }) => {
           </group>
         )}
 
-        {/* Quantum Cloud - Still looks best as a 3D cloud, but we view it from front */}
         {mode === 'cloud' && (
-          <ElectronCloud count={element.number * 80 + 500} color={color} />
+          <ElectronCloud count={element.number * 60 + 400} color={color} />
         )}
       </group>
     </>
@@ -153,24 +149,47 @@ const SceneContent: React.FC<AtomProps> = ({ element, mode, color }) => {
 };
 
 export const AtomVisualizer: React.FC<AtomProps> = (props) => {
-  // Calculate dynamic camera distance based on number of shells
-  // Reduced distance to zoom in the model significantly
+  const [ready, setReady] = React.useState(false);
   const shellCount = props.element.shells.length;
-  const dynamicZ = 8 + (shellCount * 2.8);
+  const dynamicZ = 12 + (shellCount * 3);
+
+  React.useEffect(() => {
+    setReady(false);
+    // 500ms delay ensures the 400ms scale-in animation is completely finished
+    const timer = setTimeout(() => setReady(true), 500);
+    return () => clearTimeout(timer);
+  }, [props.element.number, props.mode]);
+
+  if (!ready) {
+    return (
+      <div className="w-full h-full flex items-center justify-center bg-transparent">
+        <div className="w-8 h-8 border-2 border-white/20 border-t-white/80 rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
-    // Full size container
     <div className="w-full h-full relative overflow-hidden bg-transparent">
-      <Canvas camera={{ position: [0, 0, dynamicZ], fov: 35 }}>
-        <Stars radius={100} depth={50} count={3000} factor={4} saturation={0} fade speed={0.5} />
+      <Canvas 
+        shadows={false}
+        dpr={typeof window !== 'undefined' ? window.devicePixelRatio : 1}
+        gl={{ antialias: true, alpha: true }}
+        camera={{ position: [0, 0, dynamicZ], fov: 45 }}
+        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+        onCreated={({ gl, camera }) => {
+          gl.setClearColor(0x000000, 0);
+          camera.lookAt(0, 0, 0);
+        }}
+      >
+        <Stars radius={100} depth={50} count={2000} factor={4} saturation={0} fade speed={0.5} />
         <SceneContent {...props} />
-        {/* Restrict OrbitControls to prevent rotating the 2D plane, allow Zoom only */}
         <OrbitControls 
-          enableRotate={props.mode === 'cloud'} // Allow rotation only for cloud mode
+          enableRotate={props.mode === 'cloud'}
           enableZoom={true} 
-          minDistance={2} 
-          maxDistance={100} 
-          enablePan={true}
+          minDistance={5} 
+          maxDistance={150} 
+          enablePan={false}
+          target={[0, 0, 0]}
         />
       </Canvas>
       

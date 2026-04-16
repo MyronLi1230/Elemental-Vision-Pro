@@ -411,15 +411,29 @@ const PeriodicTable: React.FC<PeriodicTableProps> = ({
   });
 
   useEffect(() => {
-    if (containerRef.current && transform.scale === 1 && transform.x === 0 && transform.y === 0) {
-      const containerWidth = containerRef.current.clientWidth;
-      const contentWidth = 1400; // Expanded to 1400 for maximum clarity
-      
-      const initialScale = containerWidth < 768 ? (containerWidth / contentWidth) * 0.95 : 0.8;
-      const centeredX = (containerWidth - contentWidth * initialScale) / 2;
-      const centeredY = 40; 
+    const initializeTable = () => {
+      if (containerRef.current) {
+        const containerWidth = containerRef.current.clientWidth;
+        const containerHeight = containerRef.current.clientHeight;
+        
+        if (containerWidth > 0 && containerHeight > 0) {
+          const contentWidth = 1400;
+          const initialScale = containerWidth < 768 ? (containerWidth / contentWidth) * 0.95 : 0.8;
+          const centeredX = (containerWidth - contentWidth * initialScale) / 2;
+          const centeredY = Math.max(20, (containerHeight - 800 * initialScale) / 3); 
+          
+          setTransform({ x: centeredX, y: centeredY, scale: initialScale });
+          return true;
+        }
+      }
+      return false;
+    };
 
-      setTransform({ x: centeredX, y: centeredY, scale: initialScale });
+    if (!initializeTable()) {
+      const timer = setInterval(() => {
+        if (initializeTable()) clearInterval(timer);
+      }, 100);
+      return () => clearInterval(timer);
     }
   }, []);
 
@@ -541,11 +555,11 @@ const PeriodicTable: React.FC<PeriodicTableProps> = ({
   const groupNumbers = Array.from({ length: 18 }, (_, i) => i + 1);
 
   return (
-    <div className="w-full h-full flex flex-col items-center relative">
+    <div className="w-full h-full flex flex-col items-center relative overflow-hidden">
       
-      {/* Search Results Dropdown (Absolute positioned relative to container) */}
+      {/* Search Results Dropdown (Above Bottom Controls) */}
       {searchQuery && (
-         <div className="absolute top-16 z-40 bg-[#1e293b] border border-white/10 rounded-xl shadow-2xl max-h-60 overflow-y-auto w-64 md:w-80 custom-scrollbar">
+         <div className="absolute bottom-20 z-40 bg-[#1e293b] border border-white/10 rounded-xl shadow-2xl max-h-60 overflow-y-auto w-64 md:w-80 custom-scrollbar animate-in fade-in slide-in-from-bottom-4 duration-300">
             {filteredElements.length > 0 ? (
                filteredElements.map(e => (
                   <button 
@@ -566,53 +580,10 @@ const PeriodicTable: React.FC<PeriodicTableProps> = ({
          </div>
       )}
 
-      {/* Floating Controls with Search */}
-      <div className="sticky top-4 z-30 flex items-center gap-2 bg-[#1e293b]/90 backdrop-blur-md p-1.5 rounded-full border border-white/10 shadow-xl mb-2 pointer-events-auto transition-all">
-        
-        {/* Search Input Area */}
-        <div className={`flex items-center transition-all duration-300 overflow-hidden ${showSearchInput || searchQuery ? 'w-32 md:w-48 px-2' : 'w-0'}`}>
-           <input 
-             type="text"
-             className="w-full bg-transparent border-none outline-none text-xs text-white placeholder-white/40"
-             placeholder={lang === 'en' ? "Search..." : "搜索..."}
-             value={searchQuery}
-             onChange={(e) => setSearchQuery(e.target.value)}
-             autoFocus={showSearchInput}
-             onBlur={() => !searchQuery && setShowSearchInput(false)}
-           />
-           {searchQuery && (
-             <button onClick={() => setSearchQuery('')} className="ml-1 text-white/40 hover:text-white">
-               <X size={12} />
-             </button>
-           )}
-        </div>
-        
-        <button 
-          onClick={() => setShowSearchInput(true)} 
-          className={`p-2 hover:bg-white/10 rounded-full transition-colors ${showSearchInput || searchQuery ? 'text-emerald-400 bg-white/5' : 'text-white/70 hover:text-white'}`}
-          title="Search"
-        >
-           <Search size={16} />
-        </button>
-
-        <div className="w-px h-4 bg-white/10 mx-1"></div>
-
-        <button onClick={zoomOut} className="p-2 hover:bg-white/10 rounded-full text-white/70 hover:text-white transition-colors" title="Zoom Out"><ZoomOut size={16} /></button>
-        <button onClick={zoomIn} className="p-2 hover:bg-white/10 rounded-full text-white/70 hover:text-white transition-colors" title="Zoom In"><ZoomIn size={16} /></button>
-        
-        <div className="w-px h-4 bg-white/10 mx-1"></div>
-        
-        <button onClick={reset} className="p-2 hover:bg-white/10 rounded-full text-white/70 hover:text-white transition-colors" title="Reset View"><RotateCcw size={14} /></button>
-        
-        <div className="hidden md:flex items-center gap-1 ml-2 text-xs text-white/30 border-l border-white/10 pl-2 pr-2">
-           <Move size={10} /> <span>Drag</span>
-        </div>
-      </div>
-
       {/* Viewport Container */}
       <div 
         ref={containerRef}
-        className="relative w-full h-[75vh] md:h-[85vh] overflow-hidden bg-white/5 border border-white/5 rounded-xl cursor-grab active:cursor-grabbing touch-none shadow-inner"
+        className="relative w-full flex-1 overflow-hidden bg-white/5 border border-white/5 rounded-xl cursor-grab active:cursor-grabbing touch-none shadow-inner"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -683,14 +654,14 @@ const PeriodicTable: React.FC<PeriodicTableProps> = ({
               <div style={{ gridRow: 7, gridColumn: 4 }} className="border border-white/10 rounded-md flex items-center justify-center text-xs text-white/40 font-mono">57-71</div>
               <div style={{ gridRow: 8, gridColumn: 4 }} className="border border-white/10 rounded-md flex items-center justify-center text-xs text-white/40 font-mono">89-103</div>
 
-              {/* Fixed Legend Information Box (Desktop) */}
+              {/* Fixed Legend Information Box */}
               <div 
                 style={{ 
                   gridRow: '2 / 5',  
                   gridColumn: '4 / 14', 
                   zIndex: 30
                 }} 
-                className="hidden lg:flex absolute inset-0 flex-col pointer-events-none"
+                className="flex absolute inset-0 flex-col pointer-events-none"
               >
                 <div 
                   className="bg-[#1e293b]/95 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-2xl flex flex-col pointer-events-auto w-full h-full overflow-hidden"
@@ -786,10 +757,10 @@ const PeriodicTable: React.FC<PeriodicTableProps> = ({
                       </p>
                     </div>
                   ) : (
-                    <div className="flex flex-col h-full justify-between py-2">
-                      <div className="flex items-center gap-3 mb-2">
-                        <Info size={24} className="text-emerald-400" />
-                        <h3 className="text-lg font-bold tracking-wider uppercase opacity-80">
+                    <div className="flex flex-col h-full justify-between py-0.5 px-1">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <Info size={18} className="text-emerald-400 shrink-0" />
+                        <h3 className="text-base font-bold tracking-wider uppercase opacity-80 leading-tight">
                           {tableMode === 'standard' ? (lang === 'en' ? 'Phase Legend' : '物相图例') : (lang === 'en' ? 'Property Scale' : '数值刻度')}
                         </h3>
                       </div>
@@ -820,22 +791,22 @@ const PeriodicTable: React.FC<PeriodicTableProps> = ({
                           </div>
                         </div>
                       ) : (tableMode === 'atomic_radius' || tableMode === 'ionic_radius') ? (
-                        <div className="flex flex-col gap-4">
-                          <div className="flex items-end gap-6 justify-center py-2">
-                            <div className="flex flex-col items-center gap-3">
-                              <div className={`w-4 h-4 rounded-full ${tableMode === 'atomic_radius' ? 'bg-blue-400' : 'bg-emerald-400'} shadow-lg`}></div>
-                              <span className="text-xs opacity-40 font-mono font-bold">30pm</span>
+                        <div className="flex flex-col gap-0">
+                          <div className="flex items-end gap-5 justify-center py-0">
+                            <div className="flex flex-col items-center gap-0.5">
+                              <div className={`w-3.5 h-3.5 rounded-full ${tableMode === 'atomic_radius' ? 'bg-blue-400' : 'bg-emerald-400'} shadow-lg`}></div>
+                              <span className="text-[10px] opacity-40 font-mono font-bold">30pm</span>
                             </div>
-                            <div className="flex flex-col items-center gap-3">
-                              <div className={`w-10 h-10 rounded-full ${tableMode === 'atomic_radius' ? 'bg-blue-500' : 'bg-emerald-500'} shadow-lg`}></div>
-                              <span className="text-xs opacity-40 font-mono font-bold">150pm</span>
+                            <div className="flex flex-col items-center gap-0.5">
+                              <div className={`w-9 h-9 rounded-full ${tableMode === 'atomic_radius' ? 'bg-blue-500' : 'bg-emerald-500'} shadow-lg`}></div>
+                              <span className="text-[10px] opacity-40 font-mono font-bold">150pm</span>
                             </div>
-                            <div className="flex flex-col items-center gap-3">
-                              <div className={`w-16 h-16 rounded-full ${tableMode === 'atomic_radius' ? 'bg-blue-600' : 'bg-emerald-600'} shadow-lg`}></div>
-                              <span className="text-xs opacity-40 font-mono font-bold">300pm</span>
+                            <div className="flex flex-col items-center gap-0.5">
+                              <div className={`w-14 h-14 rounded-full ${tableMode === 'atomic_radius' ? 'bg-blue-600' : 'bg-emerald-600'} shadow-lg`}></div>
+                              <span className="text-[10px] opacity-40 font-mono font-bold">300pm</span>
                             </div>
                           </div>
-                          <p className="text-xs text-center opacity-40 uppercase tracking-widest font-bold">
+                          <p className="text-[10px] text-center opacity-40 uppercase tracking-widest font-bold mt-0.5">
                             {lang === 'en' 
                               ? `Sphere size represents ${tableMode === 'atomic_radius' ? 'atomic' : 'ionic'} radius` 
                               : `球体大小代表${tableMode === 'atomic_radius' ? '原子' : '离子'}半径`}
@@ -860,16 +831,16 @@ const PeriodicTable: React.FC<PeriodicTableProps> = ({
                         </div>
                       )}
 
-                      <div className="pt-6 border-t border-white/5 mt-auto">
-                        <div className="mb-3">
-                          <h4 className="text-[10px] font-bold text-white/50 uppercase tracking-widest mb-1">
+                      <div className="pt-1.5 border-t border-white/5 mt-auto">
+                        <div className="mb-1">
+                          <h4 className="text-[9px] font-bold text-white/50 uppercase tracking-widest mb-0.5">
                             {lang === 'en' ? 'Mode Definition' : '模式定义'}
                           </h4>
-                          <p className="text-xs text-white/90 leading-relaxed font-semibold">
+                          <p className="text-[0.65rem] text-white/90 leading-tight font-semibold">
                             {lang === 'en' ? MODE_DESCRIPTIONS[tableMode].en : MODE_DESCRIPTIONS[tableMode].zh}
                           </p>
                         </div>
-                        <p className="text-[10px] text-white/40 italic leading-relaxed">
+                        <p className="text-[9px] text-white/30 italic leading-tight">
                           {lang === 'en' 
                             ? 'Hover over an element to highlight its group and period. Use sliders to explore history and temperature.' 
                             : '将鼠标悬停在元素上以突出显示其族和周期。使用滑块探索历史和温度。'}
@@ -946,6 +917,52 @@ const PeriodicTable: React.FC<PeriodicTableProps> = ({
         {/* Helper Hint for Mobile */}
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 md:hidden bg-black/40 backdrop-blur px-3 py-1 rounded-full text-xs text-white/50 pointer-events-none">
           Pinch to Zoom • Drag to Move
+        </div>
+      </div>
+
+      {/* Repositioned Bottom Controls */}
+      <div className="sticky bottom-6 z-30 flex items-center gap-1.5 md:gap-2 bg-[#1e293b]/95 backdrop-blur-md p-1.5 rounded-full border border-white/20 shadow-[0_4px_20px_rgba(0,0,0,0.5)] mt-4 pointer-events-auto transition-all animate-in slide-in-from-bottom-4 duration-500">
+        
+        {/* Search Input Area */}
+        <div className={`flex items-center transition-all duration-300 overflow-hidden ${showSearchInput || searchQuery ? 'w-32 md:w-48 px-2 pl-3' : 'w-0'}`}>
+           <Search size={14} className="text-white/40 mr-2 shrink-0" />
+           <input 
+             type="text"
+             className="w-full bg-transparent border-none outline-none text-xs text-white placeholder-white/40"
+             placeholder={lang === 'en' ? "Search..." : "搜索..."}
+             value={searchQuery}
+             onChange={(e) => setSearchQuery(e.target.value)}
+             autoFocus={showSearchInput}
+             onBlur={() => !searchQuery && setShowSearchInput(false)}
+           />
+           {searchQuery && (
+             <button onClick={() => setSearchQuery('')} className="ml-1 text-white/40 hover:text-white">
+               <X size={12} />
+             </button>
+           )}
+        </div>
+        
+        {!showSearchInput && !searchQuery && (
+          <button 
+            onClick={() => setShowSearchInput(true)} 
+            className="p-2.5 hover:bg-white/10 rounded-full transition-colors text-white/70 hover:text-white"
+            title="Search"
+          >
+             <Search size={18} />
+          </button>
+        )}
+
+        <div className="w-px h-4 bg-white/10 mx-0.5 md:mx-1"></div>
+
+        <button onClick={zoomOut} className="p-2.5 hover:bg-white/10 rounded-full text-white/70 hover:text-white transition-colors active:scale-90" title="Zoom Out"><ZoomOut size={18} /></button>
+        <button onClick={zoomIn} className="p-2.5 hover:bg-white/10 rounded-full text-white/70 hover:text-white transition-colors active:scale-90" title="Zoom In"><ZoomIn size={18} /></button>
+        
+        <div className="w-px h-4 bg-white/10 mx-0.5 md:mx-1"></div>
+        
+        <button onClick={reset} className="p-2.5 hover:bg-white/10 rounded-full text-white/70 hover:text-white transition-colors active:scale-90" title="Reset View"><RotateCcw size={16} /></button>
+        
+        <div className="hidden md:flex items-center gap-1.5 ml-2 text-[10px] text-white/30 border-l border-white/10 pl-3 pr-2 font-bold uppercase tracking-tighter">
+           <Move size={12} /> <span>Drag Table</span>
         </div>
       </div>
     </div>
