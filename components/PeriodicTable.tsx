@@ -665,7 +665,7 @@ const PeriodicTable: React.FC<PeriodicTableProps> = ({
                 className="flex absolute inset-0 flex-col pointer-events-none"
               >
                 <div 
-                  className="bg-[#1e293b]/95 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-2xl flex flex-col pointer-events-auto w-full h-full overflow-hidden"
+                  className="bg-[#1e293b]/95 backdrop-blur-xl border border-white/20 rounded-2xl p-4 md:p-6 shadow-2xl flex flex-col pointer-events-auto w-full h-full overflow-hidden"
                 >
                   {hoveredElement ? (
                     <div className="flex flex-col h-full animate-in fade-in slide-in-from-bottom-2 duration-300">
@@ -718,7 +718,7 @@ const PeriodicTable: React.FC<PeriodicTableProps> = ({
                           <Zap size={32} className="text-white" />
                         </div>
                         <div>
-                          <h3 className="text-2xl font-bold tracking-wider uppercase">
+                          <h3 className="text-xl md:text-xl lg:text-2xl font-bold tracking-wider uppercase">
                             {lang === 'en' ? MODE_DESCRIPTIONS[tableMode].en.split(' ')[0] : (tableMode === 'electronegativity' ? '电负性' : tableMode === 'atomic_radius' ? '原子半径' : tableMode === 'ionic_radius' ? '离子半径' : tableMode === 'melting_point' ? '熔点' : tableMode === 'boiling_point' ? '沸点' : tableMode === 'density' ? '密度' : tableMode === 'ionization_energy' ? '电离能' : '电子亲和能')}
                           </h3>
                           <span className="text-xs text-white/40 font-bold uppercase tracking-widest">
@@ -726,7 +726,7 @@ const PeriodicTable: React.FC<PeriodicTableProps> = ({
                           </span>
                         </div>
                       </div>
-                      <p className="text-sm md:text-lg text-white/90 leading-relaxed font-semibold">
+                      <p className="text-xs md:text-sm lg:text-lg text-white/90 leading-relaxed font-semibold">
                         {lang === 'en' ? MODE_DESCRIPTIONS[tableMode].en : MODE_DESCRIPTIONS[tableMode].zh}
                       </p>
                       <div className="mt-6 flex flex-col gap-3">
@@ -762,7 +762,7 @@ const PeriodicTable: React.FC<PeriodicTableProps> = ({
                           <Info size={32} className="text-white" />
                         </div>
                         <div>
-                          <h3 className="text-2xl font-bold tracking-wider uppercase">
+                          <h3 className="text-xl md:text-xl lg:text-2xl font-bold tracking-wider uppercase">
                             {hoveredGroup ? (lang === 'en' ? `Group ${hoveredGroup}` : `第 ${hoveredGroup} 族`) :
                              hoveredPeriod ? (lang === 'en' ? (typeof hoveredPeriod === 'number' ? `Period ${hoveredPeriod}` : hoveredPeriod.charAt(0).toUpperCase() + hoveredPeriod.slice(1)) : (typeof hoveredPeriod === 'number' ? `第 ${hoveredPeriod} 周期` : hoveredPeriod === 'lanthanide' ? '镧系元素' : '锕系元素')) :
                              hoveredBlock ? (lang === 'en' ? `${hoveredBlock.toUpperCase()} Block` : `${hoveredBlock.toUpperCase()} 区`) :
@@ -779,7 +779,7 @@ const PeriodicTable: React.FC<PeriodicTableProps> = ({
                           </span>
                         </div>
                       </div>
-                      <p className="text-sm md:text-base text-white/90 leading-relaxed font-medium">
+                      <p className="text-xs md:text-sm lg:text-base text-white/90 leading-relaxed font-medium">
                         {hoveredGroup ? (lang === 'en' ? GROUP_DESCRIPTIONS[hoveredGroup]?.en : GROUP_DESCRIPTIONS[hoveredGroup]?.zh) :
                          hoveredPeriod ? (lang === 'en' ? PERIOD_DESCRIPTIONS[hoveredPeriod]?.en : PERIOD_DESCRIPTIONS[hoveredPeriod]?.zh) :
                          hoveredBlock ? (lang === 'en' ? BLOCK_DESCRIPTIONS[hoveredBlock]?.en : BLOCK_DESCRIPTIONS[hoveredBlock]?.zh) :
