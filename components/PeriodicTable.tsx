@@ -344,22 +344,22 @@ const Tile = React.memo<TileProps>(({
       <span className={`text-[0.65rem] md:text-[0.7rem] absolute top-1 left-1.5 opacity-70 select-none z-20 ${(tableMode === 'atomic_radius' || tableMode === 'ionic_radius') ? 'text-white font-bold' : ''}`}>{e.number}</span>
       
       {/* Symbol */}
-      <span className={`font-bold select-none z-10 ${(tableMode === 'atomic_radius' || tableMode === 'ionic_radius') ? 'text-white drop-shadow-md text-sm md:text-base lg:text-lg' : `text-base md:text-lg lg:text-xl ${phaseColor}`}`}>
+      <span className={`font-bold select-none z-10 ${(tableMode === 'atomic_radius' || tableMode === 'ionic_radius') ? 'text-white drop-shadow-md text-xs md:text-sm lg:text-base' : `text-sm md:text-base lg:text-lg ${phaseColor}`}`}>
         {tableMode === 'ionic_radius' && e.ion_symbol ? e.ion_symbol : e.symbol}
       </span>
       
       {/* Name or Radius Value */}
-      <div className="flex flex-col items-center w-full z-10 mt-1">
+      <div className="flex flex-col items-center w-full z-10 mt-0.5">
         {(tableMode === 'atomic_radius' || tableMode === 'ionic_radius') ? (
-          <span className="text-[0.8rem] md:text-[0.9rem] lg:text-[1rem] text-white font-black opacity-100 drop-shadow-md select-none mt-1">
+          <span className="text-[0.7rem] md:text-[0.8rem] lg:text-[0.9rem] text-white font-black opacity-100 drop-shadow-md select-none mt-0.5">
             {getPropertyValue()}
           </span>
         ) : (
           <>
-            <span className={`text-[0.6rem] md:text-[0.65rem] font-bold opacity-90 truncate w-full text-center px-0.5 hidden sm:block select-none ${phaseColor}`}>
+            <span className={`text-[0.55rem] md:text-[0.65rem] font-bold opacity-90 truncate w-full text-center px-0.5 select-none ${phaseColor}`}>
               {lang === 'en' ? e.name_en : e.name_cn}
             </span>
-            <span className="text-[0.5rem] md:text-[0.55rem] opacity-60 font-mono select-none hidden lg:block">
+            <span className="text-[0.45rem] md:text-[0.5rem] opacity-60 font-mono select-none">
               {getPropertyValue()}
             </span>
           </>
@@ -417,7 +417,7 @@ const PeriodicTable: React.FC<PeriodicTableProps> = ({
         const containerHeight = containerRef.current.clientHeight;
         
         if (containerWidth > 0 && containerHeight > 0) {
-          const contentWidth = 1400;
+          const contentWidth = 1550;
           const initialScale = containerWidth < 768 ? (containerWidth / contentWidth) * 0.95 : 0.8;
           const centeredX = (containerWidth - contentWidth * initialScale) / 2;
           const centeredY = Math.max(20, (containerHeight - 800 * initialScale) / 3); 
@@ -541,8 +541,9 @@ const PeriodicTable: React.FC<PeriodicTableProps> = ({
   const reset = () => {
      if (containerRef.current) {
         const containerWidth = containerRef.current.clientWidth;
-        const initialScale = containerWidth < 768 ? (containerWidth / 1400) * 0.95 : 0.8;
-        const centeredX = (containerWidth - 1400 * initialScale) / 2;
+        const contentWidth = 1550;
+        const initialScale = containerWidth < 768 ? (containerWidth / contentWidth) * 0.95 : 0.8;
+        const centeredX = (containerWidth - contentWidth * initialScale) / 2;
         setTransform({ x: centeredX, y: 40, scale: initialScale });
      }
   };
@@ -600,11 +601,11 @@ const PeriodicTable: React.FC<PeriodicTableProps> = ({
             transition: isDragging || gesture.current.isPinching ? 'none' : 'transform 0.1s ease-out'
           }}
         >
-          <div className="min-w-[1400px] flex flex-col items-center select-none pb-24">
+          <div className="min-w-[1550px] flex flex-col items-center select-none pb-24">
             {/* Main Grid: 19 Columns (1 for Period + 18 for Groups), 8 Rows (1 Header + 7 Periods) */}
             <div 
-              className="grid gap-3 md:gap-4 w-full mb-6 relative" 
-              style={{ gridTemplateColumns: '60px repeat(18, minmax(0, 1fr))', gridTemplateRows: 'repeat(8, 1fr)' }}
+              className="grid gap-4 md:gap-5 w-full mb-6 relative" 
+              style={{ gridTemplateColumns: '70px repeat(18, minmax(0, 1fr))', gridTemplateRows: 'repeat(8, 1fr)' }}
             >
               {/* Period Labels */}
               {[1, 2, 3, 4, 5, 6, 7].map(p => (
@@ -710,6 +711,41 @@ const PeriodicTable: React.FC<PeriodicTableProps> = ({
                         </div>
                       </div>
                     </div>
+                  ) : (tableMode !== 'standard' && !hoveredGroup && !hoveredPeriod && !hoveredBlock && !hoveredClassification) ? (
+                    <div className="flex flex-col h-full animate-in fade-in slide-in-from-bottom-2 duration-300 justify-center">
+                      <div className="flex items-center gap-6 mb-4">
+                        <div className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-xl bg-gradient-to-br from-emerald-500 to-teal-600">
+                          <Zap size={32} className="text-white" />
+                        </div>
+                        <div>
+                          <h3 className="text-2xl font-bold tracking-wider uppercase">
+                            {lang === 'en' ? MODE_DESCRIPTIONS[tableMode].en.split(' ')[0] : (tableMode === 'electronegativity' ? '电负性' : tableMode === 'atomic_radius' ? '原子半径' : tableMode === 'ionic_radius' ? '离子半径' : tableMode === 'melting_point' ? '熔点' : tableMode === 'boiling_point' ? '沸点' : tableMode === 'density' ? '密度' : tableMode === 'ionization_energy' ? '电离能' : '电子亲和能')}
+                          </h3>
+                          <span className="text-xs text-white/40 font-bold uppercase tracking-widest">
+                            {lang === 'en' ? 'Mode Insight' : '模式详情'}
+                          </span>
+                        </div>
+                      </div>
+                      <p className="text-sm md:text-lg text-white/90 leading-relaxed font-semibold">
+                        {lang === 'en' ? MODE_DESCRIPTIONS[tableMode].en : MODE_DESCRIPTIONS[tableMode].zh}
+                      </p>
+                      <div className="mt-6 flex flex-col gap-3">
+                         <div className="h-2.5 w-full rounded-full bg-gradient-to-r from-[#1e293b] to-white/80" style={{
+                            backgroundImage: `linear-gradient(to right, #1e293b, ${
+                              tableMode === 'electronegativity' ? '#f43f5e' :
+                              tableMode === 'melting_point' ? '#f59e0b' :
+                              tableMode === 'boiling_point' ? '#ef4444' :
+                              tableMode === 'density' ? '#8b5cf6' :
+                              tableMode === 'ionization_energy' ? '#06b6d4' :
+                              tableMode === 'electron_affinity' ? '#f97316' : '#10b981'
+                            })`
+                         }}></div>
+                         <div className="flex justify-between text-xs font-mono opacity-40">
+                             <span>MIN</span>
+                             <span>MAX</span>
+                         </div>
+                      </div>
+                    </div>
                   ) : (hoveredGroup || hoveredPeriod || hoveredBlock || hoveredClassification || filters.group || filters.period || filters.block || filters.classification) ? (
                     <div className="flex flex-col h-full animate-in fade-in slide-in-from-bottom-2 duration-300 justify-center">
                       <div className="flex items-center gap-6 mb-4">
@@ -743,7 +779,7 @@ const PeriodicTable: React.FC<PeriodicTableProps> = ({
                           </span>
                         </div>
                       </div>
-                      <p className="text-base text-white/90 leading-relaxed font-medium">
+                      <p className="text-sm md:text-base text-white/90 leading-relaxed font-medium">
                         {hoveredGroup ? (lang === 'en' ? GROUP_DESCRIPTIONS[hoveredGroup]?.en : GROUP_DESCRIPTIONS[hoveredGroup]?.zh) :
                          hoveredPeriod ? (lang === 'en' ? PERIOD_DESCRIPTIONS[hoveredPeriod]?.en : PERIOD_DESCRIPTIONS[hoveredPeriod]?.zh) :
                          hoveredBlock ? (lang === 'en' ? BLOCK_DESCRIPTIONS[hoveredBlock]?.en : BLOCK_DESCRIPTIONS[hoveredBlock]?.zh) :
@@ -853,8 +889,12 @@ const PeriodicTable: React.FC<PeriodicTableProps> = ({
             </div>
 
             {/* F-Block */}
-            <div className="min-w-[1400px] mt-8 flex flex-col gap-3 w-full">
-              <div className="grid gap-2 md:gap-3" style={{ gridTemplateColumns: '60px repeat(18, minmax(0, 1fr))' }}>
+            <div className="min-w-[1550px] mt-8 flex flex-col gap-4 w-full">
+              {/* Lanthanides Row */}
+              <div 
+                className="grid gap-4 md:gap-5" 
+                style={{ gridTemplateColumns: '70px repeat(18, minmax(0, 1fr))' }}
+              >
                   <div 
                     className="col-span-3 flex items-center justify-end pr-4 text-xs text-white/30 font-mono tracking-wider cursor-help hover:text-teal-400 transition-colors"
                     onMouseEnter={() => handleHover(null, null, 'lanthanide', null)}
@@ -882,7 +922,11 @@ const PeriodicTable: React.FC<PeriodicTableProps> = ({
                     />
                   ))}
               </div>
-              <div className="grid gap-1 md:gap-2" style={{ gridTemplateColumns: '40px repeat(18, minmax(0, 1fr))' }}>
+              {/* Actinides Row */}
+              <div 
+                className="grid gap-4 md:gap-5" 
+                style={{ gridTemplateColumns: '70px repeat(18, minmax(0, 1fr))' }}
+              >
                   <div 
                     className="col-span-3 flex items-center justify-end pr-4 text-xs text-white/30 font-mono tracking-wider cursor-help hover:text-rose-400 transition-colors"
                     onMouseEnter={() => handleHover(null, null, 'actinide', null)}
