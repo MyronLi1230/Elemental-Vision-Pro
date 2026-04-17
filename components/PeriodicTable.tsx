@@ -711,7 +711,7 @@ const PeriodicTable: React.FC<PeriodicTableProps> = ({
                         </div>
                       </div>
                     </div>
-                  ) : (tableMode !== 'standard' && !hoveredGroup && !hoveredPeriod && !hoveredBlock && !hoveredClassification) ? (
+                  ) : (tableMode !== 'standard' && !hoveredGroup && !hoveredPeriod && !hoveredBlock && !hoveredClassification && !filters.group && !filters.period && !filters.block) ? (
                     <div className="flex flex-col h-full animate-in fade-in slide-in-from-bottom-2 duration-300 justify-center">
                       <div className="flex items-center gap-6 mb-4">
                         <div className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-xl bg-gradient-to-br from-emerald-500 to-teal-600">
@@ -785,7 +785,7 @@ const PeriodicTable: React.FC<PeriodicTableProps> = ({
                          hoveredBlock ? (lang === 'en' ? BLOCK_DESCRIPTIONS[hoveredBlock]?.en : BLOCK_DESCRIPTIONS[hoveredBlock]?.zh) :
                          hoveredClassification ? (lang === 'en' ? CLASSIFICATION_DESCRIPTIONS[hoveredClassification]?.en : CLASSIFICATION_DESCRIPTIONS[hoveredClassification]?.zh) :
                          filters.group ? (lang === 'en' ? GROUP_DESCRIPTIONS[filters.group]?.en : GROUP_DESCRIPTIONS[filters.group]?.zh) :
-                         filters.period ? (lang === 'en' ? PERIOD_DESCRIPTIONS[filters.period]?.en : (typeof filters.period === 'number' ? `第 ${filters.period} 周期` : filters.period === 'lanthanide' ? '镧系元素' : '锕系元素')) :
+                         filters.period ? (lang === 'en' ? PERIOD_DESCRIPTIONS[filters.period]?.en : PERIOD_DESCRIPTIONS[filters.period]?.zh) :
                          filters.block ? (lang === 'en' ? BLOCK_DESCRIPTIONS[filters.block]?.en : BLOCK_DESCRIPTIONS[filters.block]?.zh) :
                          filters.classification ? (lang === 'en' ? CLASSIFICATION_DESCRIPTIONS[filters.classification]?.en : CLASSIFICATION_DESCRIPTIONS[filters.classification]?.zh) :
                          null
