@@ -73,10 +73,10 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="h-screen bg-[#0f172a] text-white font-sans selection:bg-emerald-500/30 flex flex-col overflow-hidden">
+    <div className="h-screen h-[100dvh] bg-[#0f172a] text-white font-sans selection:bg-emerald-500/30 flex flex-col overflow-hidden">
       
       {/* Navbar / Header */}
-      <header className="fixed top-0 left-0 right-0 z-40 bg-[#0f172a]/80 backdrop-blur-lg border-b border-white/5 h-16 flex items-center px-2 md:px-6">
+      <header className="flex-shrink-0 bg-[#0f172a]/80 backdrop-blur-lg border-b border-white/5 h-16 flex items-center px-2 md:px-6">
         {/* Left: Logo */}
         <div className="flex-shrink-0 flex items-center gap-2 md:w-12 lg:w-48 transition-all">
           <div className="w-9 h-9 bg-gradient-to-tr from-emerald-400 to-blue-500 rounded-lg flex items-center justify-center shadow-[0_0_20px_rgba(52,211,153,0.3)]">
@@ -171,8 +171,8 @@ const App: React.FC = () => {
       </header>
 
       {/* Main Content */}
-      <main className="pt-16 px-2 md:px-4 flex-1 flex flex-col h-full overflow-hidden">
-        <div className="flex-1 min-h-0 relative flex flex-col pt-2">
+      <main className="flex-1 flex flex-col min-h-0 overflow-hidden px-2 md:px-4">
+        <div className="flex-1 min-h-0 relative flex flex-col py-2">
           <FilterBar 
             filters={filters} 
             setFilters={setFilters} 

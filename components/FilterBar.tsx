@@ -72,106 +72,108 @@ const FilterBar: React.FC<FilterBarProps> = ({ filters, setFilters, lang }) => {
   };
 
   return (
-    <div className="hidden md:flex w-full bg-[#1e293b]/20 backdrop-blur-md border border-white/5 rounded-lg p-1.5 mb-2 flex-wrap items-center justify-center gap-x-6 gap-y-2 shadow-xl">
-      {/* Groups */}
-      <div className="flex items-center gap-2">
-        <span className="text-xs uppercase tracking-wider text-blue-400/60 font-bold">
-          {lang === 'en' ? 'Group' : '族'}
-        </span>
-        <div className="flex flex-wrap gap-1">
-          {groups.map(g => (
-            <button
-              key={g}
-              onClick={() => toggleFilter('group', g)}
-              className={`w-6 h-6 flex items-center justify-center rounded-sm text-xs font-mono transition-all border ${
-                filters.group === g 
-                  ? 'bg-blue-500/20 text-blue-400 border-blue-500/50' 
-                  : 'bg-white/5 text-white/20 border-transparent hover:border-white/10'
-              }`}
-            >
-              {g}
-            </button>
-          ))}
+    <div className="hidden md:flex w-full bg-[#1e293b]/20 backdrop-blur-md border border-white/5 rounded-lg p-1.5 mb-2 overflow-x-auto no-scrollbar shadow-xl">
+      <div className="flex items-center justify-center gap-x-4 lg:gap-x-6 gap-y-2 min-w-max mx-auto px-4">
+        {/* Groups */}
+        <div className="flex items-center gap-1.5 lg:gap-2">
+          <span className="text-[10px] lg:text-xs uppercase tracking-wider text-blue-400/60 font-bold shrink-0">
+            {lang === 'en' ? 'Group' : '族'}
+          </span>
+          <div className="flex gap-0.5 lg:gap-1">
+            {groups.map(g => (
+              <button
+                key={g}
+                onClick={() => toggleFilter('group', g)}
+                className={`w-5 h-5 lg:w-6 lg:h-6 flex items-center justify-center rounded-sm text-[10px] lg:text-xs font-mono transition-all border shrink-0 ${
+                  filters.group === g 
+                    ? 'bg-blue-500/20 text-blue-400 border-blue-500/50' 
+                    : 'bg-white/5 text-white/20 border-transparent hover:border-white/10'
+                }`}
+              >
+                {g}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
 
-      <div className="hidden sm:block w-px h-4 bg-white/10"></div>
+        <div className="w-px h-4 bg-white/10 shrink-0"></div>
 
-      {/* Blocks */}
-      <div className="flex items-center gap-2">
-        <span className="text-xs uppercase tracking-wider text-violet-400/60 font-bold">
-          {lang === 'en' ? 'Block' : '能区'}
-        </span>
-        <div className="flex gap-1">
-          {blocks.map(b => (
-            <button
-              key={b}
-              onClick={() => toggleFilter('block', b)}
-              className={`w-6 h-6 flex items-center justify-center rounded-sm text-xs font-mono uppercase transition-all border ${
-                filters.block === b 
-                  ? 'bg-violet-500/20 text-violet-400 border-violet-500/50' 
-                  : 'bg-white/5 text-white/20 border-transparent hover:border-white/10'
-              }`}
-            >
-              {b}
-            </button>
-          ))}
+        {/* Blocks */}
+        <div className="flex items-center gap-1.5 lg:gap-2">
+          <span className="text-[10px] lg:text-xs uppercase tracking-wider text-violet-400/60 font-bold shrink-0">
+            {lang === 'en' ? 'Block' : '能区'}
+          </span>
+          <div className="flex gap-0.5 lg:gap-1">
+            {blocks.map(b => (
+              <button
+                key={b}
+                onClick={() => toggleFilter('block', b)}
+                className={`w-5 h-5 lg:w-6 lg:h-6 flex items-center justify-center rounded-sm text-[10px] lg:text-xs font-mono uppercase transition-all border shrink-0 ${
+                  filters.block === b 
+                    ? 'bg-violet-500/20 text-violet-400 border-violet-500/50' 
+                    : 'bg-white/5 text-white/20 border-transparent hover:border-white/10'
+                }`}
+              >
+                {b}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
 
-      <div className="hidden sm:block w-px h-4 bg-white/10"></div>
+        <div className="w-px h-4 bg-white/10 shrink-0"></div>
 
-      {/* Periods */}
-      <div className="flex items-center gap-2">
-        <span className="text-xs uppercase tracking-wider text-amber-400/60 font-bold">
-          {lang === 'en' ? 'Period' : '周期'}
-        </span>
-        <div className="flex flex-wrap gap-1">
-          {periods.map(p => (
+        {/* Periods */}
+        <div className="flex items-center gap-1.5 lg:gap-2">
+          <span className="text-[10px] lg:text-xs uppercase tracking-wider text-amber-400/60 font-bold shrink-0">
+            {lang === 'en' ? 'Period' : '周期'}
+          </span>
+          <div className="flex gap-0.5 lg:gap-1">
+            {periods.map(p => (
+              <button
+                key={p}
+                onClick={() => toggleFilter('period', p)}
+                className={`w-5 h-5 lg:w-6 lg:h-6 flex items-center justify-center rounded-sm text-[10px] lg:text-xs font-mono transition-all border shrink-0 ${
+                  filters.period === p 
+                    ? 'bg-amber-500/20 text-amber-400 border-amber-500/50' 
+                    : 'bg-white/5 text-white/20 border-transparent hover:border-white/10'
+                }`}
+              >
+                {p}
+              </button>
+            ))}
             <button
-              key={p}
-              onClick={() => toggleFilter('period', p)}
-              className={`w-6 h-6 flex items-center justify-center rounded-sm text-xs font-mono transition-all border ${
-                filters.period === p 
-                  ? 'bg-amber-500/20 text-amber-400 border-amber-500/50' 
+              onClick={() => toggleFilter('period', 'lanthanide')}
+              className={`px-1.5 lg:px-2 h-5 lg:h-6 flex items-center justify-center rounded-sm text-[10px] lg:text-xs font-mono transition-all border shrink-0 ${
+                filters.period === 'lanthanide' 
+                  ? 'bg-teal-500/20 text-teal-400 border-teal-500/50' 
                   : 'bg-white/5 text-white/20 border-transparent hover:border-white/10'
               }`}
             >
-              {p}
+              {lang === 'en' ? 'Ln' : '镧'}
             </button>
-          ))}
+            <button
+              onClick={() => toggleFilter('period', 'actinide')}
+              className={`px-1.5 lg:px-2 h-5 lg:h-6 flex items-center justify-center rounded-sm text-[10px] lg:text-xs font-mono transition-all border shrink-0 ${
+                filters.period === 'actinide' 
+                  ? 'bg-rose-500/20 text-rose-400 border-rose-500/50' 
+                  : 'bg-white/5 text-white/20 border-transparent hover:border-white/10'
+              }`}
+            >
+              {lang === 'en' ? 'Ac' : '锕'}
+            </button>
+          </div>
+        </div>
+
+        {hasFilters && (
           <button
-            onClick={() => toggleFilter('period', 'lanthanide')}
-            className={`px-2 h-6 flex items-center justify-center rounded-sm text-xs font-mono transition-all border ${
-              filters.period === 'lanthanide' 
-                ? 'bg-teal-500/20 text-teal-400 border-teal-500/50' 
-                : 'bg-white/5 text-white/20 border-transparent hover:border-white/10'
-            }`}
+            onClick={clearFilters}
+            className="flex items-center gap-1 lg:gap-1.5 px-2 lg:px-3 py-1 lg:py-1.5 rounded bg-white/5 text-white/40 hover:bg-white/10 transition-all text-[10px] lg:text-xs font-bold uppercase tracking-widest border border-white/10 shrink-0"
           >
-            {lang === 'en' ? 'Ln' : '镧'}
+            <X size={14} />
+            {lang === 'en' ? 'Clear' : '清除'}
           </button>
-          <button
-            onClick={() => toggleFilter('period', 'actinide')}
-            className={`px-2 h-6 flex items-center justify-center rounded-sm text-xs font-mono transition-all border ${
-              filters.period === 'actinide' 
-                ? 'bg-rose-500/20 text-rose-400 border-rose-500/50' 
-                : 'bg-white/5 text-white/20 border-transparent hover:border-white/10'
-            }`}
-          >
-            {lang === 'en' ? 'Ac' : '锕'}
-          </button>
-        </div>
+        )}
       </div>
-
-      {hasFilters && (
-        <button
-          onClick={clearFilters}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-white/5 text-white/40 hover:bg-white/10 transition-all text-xs font-bold uppercase tracking-widest border border-white/10"
-        >
-          <X size={14} />
-          {lang === 'en' ? 'Clear' : '清除'}
-        </button>
-      )}
     </div>
   );
 };
